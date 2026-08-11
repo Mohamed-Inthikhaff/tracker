@@ -124,7 +124,7 @@ export class TransactionsRepository {
 
   /**
    * Sum amounts for debt repayment auto-link (FR-DEBT-002/003).
-   * window: [dateFromInclusive, dateToExclusive) ; open-ended if dateToExclusive null.
+   * window: [dateFromInclusive, dateToExclusive); open-ended if dateToExclusive null.
    * Payee match is case-insensitive trimmed equality.
    */
   async sumAmountByPayeeTypeAndWindow(opts: {
@@ -154,6 +154,42 @@ export class TransactionsRepository {
 
     const row = await qb.getRawOne<{ total: string }>();
     return normalizeMoney(row?.total ?? "0");
+  }
+
+  /**
+   * Expense totals per category for a calendar date range (FR-BUD-002).
+   * Always computed from transactions — never stored on budgets.
+   */
+  async sumExpenseByCategory(opts: {
+    householdId: string;
+    dateFromInclusive: string;
+    dateToInclusive: string;
+    categoryIds?: string[];
+  }): Promise<Map<string, string>> {
+    const qb = this.repo
+      .createQueryBuilder("t")
+      .select("t.category_id", "categoryId")
+      .addSelect("COALESCE(SUM(t.amount), 0)", "total")
+      .where("t.household_id = :householdId", {
+        householdId: opts.householdId,
+      })
+      .andWhere("t.type = :type", { type: "Expense" })
+      .andWhere("t.txn_date >= :from", { from: opts.dateFromInclusive })
+      .andWhere("t.txn_date <= :to", { to: opts.dateToInclusive })
+      .groupBy("t.category_id");
+
+    if (opts.categoryIds && opts.categoryIds.length > 0) {
+      qb.andWhere("t.category_id IN (:...categoryIds)", {
+        categoryIds: opts.categoryIds,
+      });
+    }
+
+    const rows = await qb.getRawMany<{ categoryId: string; total: string }>();
+    const map = new Map<string, string>();
+    for (const row of rows) {
+      map.set(row.categoryId, normalizeMoney(row.total));
+    }
+    return map;
   }
 }
 
