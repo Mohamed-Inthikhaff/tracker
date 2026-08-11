@@ -11,11 +11,13 @@ import databaseConfig from "./config/configuration";
 import { HealthController } from "./health.controller";
 import { HouseholdsModule } from "./modules/households/households.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
+import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { Household } from "./modules/households/entities/household.entity";
 import { HouseholdMember } from "./modules/households/entities/household-member.entity";
 import { HouseholdInvite } from "./modules/households/entities/household-invite.entity";
 import { User } from "./modules/households/entities/user.entity";
 import { Category } from "./modules/categories/entities/category.entity";
+import { Transaction } from "./modules/transactions/entities/transaction.entity";
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { Category } from "./modules/categories/entities/category.entity";
           HouseholdInvite,
           User,
           Category,
+          Transaction,
         ],
         migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
         synchronize: config.get<boolean>("database.synchronize") ?? false,
@@ -46,6 +49,7 @@ import { Category } from "./modules/categories/entities/category.entity";
     }),
     HouseholdsModule,
     CategoriesModule,
+    TransactionsModule,
   ],
   controllers: [HealthController],
   providers: [
