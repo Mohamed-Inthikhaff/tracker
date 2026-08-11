@@ -50,7 +50,7 @@ export function LoginForm() {
         displayName,
         householdName: "My Household",
       });
-      router.replace("/transactions");
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     }

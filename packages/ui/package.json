@@ -13,6 +13,8 @@
     "./badge": "./src/badge.tsx",
     "./card": "./src/card.tsx",
     "./select": "./src/select.tsx",
+    "./kpi-card": "./src/kpi-card.tsx",
+    "./amount-input": "./src/amount-input.tsx",
     "./cn": "./src/lib/cn.ts"
   },
   "scripts": {

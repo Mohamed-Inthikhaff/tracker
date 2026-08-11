@@ -23,6 +23,7 @@ export function useCreateTransaction() {
       });
       queryClient.setQueriesData<TransactionListResult>({ queryKey: key }, (old) => {
         if (!old) return old;
+        if (!newTxn.categoryId) return old;
         const optimistic = {
           id: `optimistic-${Date.now()}`,
           householdId: householdId ?? "",

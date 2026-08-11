@@ -10,7 +10,10 @@ import { useHouseholdStore } from "@/stores/use-household-store";
 import { cn } from "@expense-tracker/ui/cn";
 
 const nav = [
+  { href: "/", label: "Dashboard" },
   { href: "/transactions", label: "Transactions" },
+  { href: "/budgets", label: "Budgets" },
+  { href: "/debts", label: "Debts" },
   { href: "/transactions/import", label: "Import" },
 ];
 
@@ -42,21 +45,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <span className="text-base font-semibold tracking-tight text-[var(--brand-primary)]">
               Expense Tracker
             </span>
-            <nav className="flex gap-1">
-              {nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm",
-                    pathname === item.href
-                      ? "bg-[var(--brand-primary)] text-white"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-base)]"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <nav className="flex flex-wrap gap-1">
+              {nav.map((item) => {
+                const active =
+                  item.href === "/"
+                    ? pathname === "/"
+                    : pathname === item.href ||
+                      pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "rounded-md px-3 py-1.5 text-sm",
+                      active
+                        ? "bg-[var(--brand-primary)] text-white"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-base)]"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
           <div className="flex items-center gap-3">

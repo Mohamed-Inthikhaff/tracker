@@ -16,6 +16,9 @@ const badgeVariants = cva(
           "bg-[var(--type-debt-given)]/15 text-[var(--type-debt-given)]",
         debtReceived:
           "bg-[var(--type-debt-received)]/15 text-[var(--type-debt-received)]",
+        under: "bg-[var(--budget-under)]/15 text-[var(--budget-under)]",
+        near: "bg-[var(--budget-near)]/15 text-[var(--budget-near)]",
+        over: "bg-[var(--budget-over)]/15 text-[var(--budget-over)]",
       },
     },
     defaultVariants: { tone: "default" },

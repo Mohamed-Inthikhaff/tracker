@@ -1,0 +1,10 @@
+{
+  "name": "Expense Capture",
+  "short_name": "Capture",
+  "description": "Two-tap expense quick-add for your household",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f3a5f",
+  "icons": []
+}
