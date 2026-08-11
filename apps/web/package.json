@@ -1,0 +1,26 @@
+{
+  "name": "@expense-tracker/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "next lint",
+    "clean": "rimraf .next"
+  },
+  "dependencies": {
+    "@expense-tracker/types": "*",
+    "@expense-tracker/ui": "*",
+    "@expense-tracker/utils": "*",
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.8.3"
+  }
+}

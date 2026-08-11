@@ -1,0 +1,47 @@
+---
+description: Core project conventions — apply to all code in this repo
+alwaysApply: true
+---
+
+# Expense Tracker — project rules
+
+This project follows docs/implementation-plan.md exactly. Before generating code for
+any module or feature, check that document's Section 5 (backend) or Section 6 (frontend)
+for the required file structure.
+
+## Non-negotiable structure rules
+
+- Never put a controller, service, and repository in one file. Every backend module
+  gets: `*.module.ts`, `*.controller.ts`, `*.service.ts`, `*.repository.ts`,
+  `entities/`, `dto/`, `interfaces/` — as separate files, exactly as shown in
+  docs/implementation-plan.md Section 5.1.
+- Controllers contain ONLY HTTP concerns (routes, status codes, calling the service).
+  No business logic in a controller, ever.
+- Services never import TypeORM's Repository directly — only the module's own
+  `*.repository.ts` file does that.
+- Every frontend feature gets: `components/`, `hooks/`, `api/`, `schema/`, `types/`
+  as shown in Section 6.2. Components never call `fetch` or the API client directly —
+  always through a hook in `hooks/`.
+- No file should exceed ~200 lines. If it does, stop and split it before continuing.
+- Reuse `packages/ui` components before creating a new one. Never duplicate a
+  component into apps/web and apps/capture separately.
+
+## Design system
+
+- All colors come from CSS variables defined in packages/ui/src/theme/tokens.css
+  (see implementation-plan.md Section 4). Never hardcode a hex value in a component.
+- Transaction-type colors are fixed: Income=green, Expense=coral, Saving=blue,
+  DebtGiven=purple, DebtReceived=amber. Use these consistently everywhere.
+
+## Stack (do not substitute without asking first)
+
+- Backend: NestJS + TypeORM + Zod (via nestjs-zod), Postgres
+- Frontend: Next.js App Router, shadcn/ui, Tremor (charts/KPIs), TanStack Query,
+  TanStack Table, React Hook Form + Zod, Zustand, Framer Motion, Lucide icons
+- Shared Zod schemas live in packages/types and are imported by both the NestJS DTO
+  and the React Hook Form resolver — never redefine a schema in two places.
+
+## When in doubt
+
+Re-read docs/implementation-plan.md and docs/srs.md before inventing a new pattern.
+If the docs don't cover it, ask rather than improvising a structure.

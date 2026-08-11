@@ -1,0 +1,30 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# builds
+dist
+build
+.next
+out
+.turbo
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs / OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# test / coverage
+coverage
+*.tsbuildinfo
