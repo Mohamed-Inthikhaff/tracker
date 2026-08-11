@@ -16,6 +16,7 @@ import { ImportsModule } from "./modules/imports/imports.module";
 import { ClassificationModule } from "./modules/classification/classification.module";
 import { DebtsModule } from "./modules/debts/debts.module";
 import { BudgetsModule } from "./modules/budgets/budgets.module";
+import { BillingModule } from "./modules/billing/billing.module";
 import { Household } from "./modules/households/entities/household.entity";
 import { HouseholdMember } from "./modules/households/entities/household-member.entity";
 import { HouseholdInvite } from "./modules/households/entities/household-invite.entity";
@@ -26,6 +27,8 @@ import { ImportBatch } from "./modules/imports/entities/import-batch.entity";
 import { ClassificationExample } from "./modules/classification/entities/classification-example.entity";
 import { Debt } from "./modules/debts/entities/debt.entity";
 import { Budget } from "./modules/budgets/entities/budget.entity";
+import { Subscription } from "./modules/billing/entities/subscription.entity";
+import { StripeWebhookEvent } from "./modules/billing/entities/stripe-webhook-event.entity";
 
 @Module({
   imports: [
@@ -53,6 +56,8 @@ import { Budget } from "./modules/budgets/entities/budget.entity";
           ClassificationExample,
           Debt,
           Budget,
+          Subscription,
+          StripeWebhookEvent,
         ],
         migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
         synchronize: config.get<boolean>("database.synchronize") ?? false,
@@ -66,6 +71,7 @@ import { Budget } from "./modules/budgets/entities/budget.entity";
     ImportsModule,
     DebtsModule,
     BudgetsModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [

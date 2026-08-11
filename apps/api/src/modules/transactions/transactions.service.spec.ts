@@ -3,6 +3,7 @@ import type { TransactionsRepository } from "./transactions.repository";
 import type { CategoriesService } from "../categories/categories.service";
 import type { HouseholdsRepository } from "../households/households.repository";
 import type { ClassificationService } from "../classification/classification.service";
+import type { BillingService } from "../billing/billing.service";
 import type { Transaction } from "./entities/transaction.entity";
 import type { User } from "../households/entities/user.entity";
 import type { Household } from "../households/entities/household.entity";
@@ -16,6 +17,9 @@ describe("TransactionsService", () => {
   >;
   let classification: jest.Mocked<
     Pick<ClassificationService, "suggestCategory" | "recordFeedback">
+  >;
+  let billing: jest.Mocked<
+    Pick<BillingService, "assertCanCreateTransaction">
   >;
 
   const householdId = "33333333-3333-3333-3333-333333333333";
@@ -82,11 +86,16 @@ describe("TransactionsService", () => {
       recordFeedback: jest.fn().mockResolvedValue({ id: "fb-1" }),
     };
 
+    billing = {
+      assertCanCreateTransaction: jest.fn().mockResolvedValue(undefined),
+    };
+
     service = new TransactionsService(
       repo,
       categories as unknown as CategoriesService,
       households as unknown as HouseholdsRepository,
-      classification as unknown as ClassificationService
+      classification as unknown as ClassificationService,
+      billing as unknown as BillingService
     );
   });
 

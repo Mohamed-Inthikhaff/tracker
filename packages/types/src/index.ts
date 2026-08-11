@@ -12,3 +12,4 @@ export * from "./schemas/import.schema";
 export * from "./schemas/classification.schema";
 export * from "./schemas/debt.schema";
 export * from "./schemas/budget.schema";
+export * from "./schemas/billing.schema";

@@ -11,6 +11,7 @@ import type {
 } from "@expense-tracker/types";
 import { CategoriesService } from "../categories/categories.service";
 import { ClassificationService } from "../classification/classification.service";
+import { BillingService } from "../billing/billing.service";
 import { HouseholdsRepository } from "../households/households.repository";
 import { TransactionsRepository } from "./transactions.repository";
 import type {
@@ -26,12 +27,12 @@ export class TransactionsService {
     private readonly repo: TransactionsRepository,
     private readonly categories: CategoriesService,
     private readonly households: HouseholdsRepository,
-    private readonly classification: ClassificationService
+    private readonly classification: ClassificationService,
+    private readonly billing: BillingService
   ) {}
 
   /**
-   * FR-TXN-001 + FR-CAT-003 — create; optional AI category when no categoryId.
-   * Calls classification only through its public method (plan §5.1).
+   * FR-TXN-001 + FR-CAT-003 + FR-BILL-007 — create with free-tier enforcement.
    */
   async create(
     householdId: string,
@@ -49,6 +50,8 @@ export class TransactionsService {
     if (!household) {
       throw new NotFoundException("Household not found");
     }
+
+    await this.billing.assertCanCreateTransaction(householdId);
 
     let categoryId = input.categoryId ?? null;
     let aiConfidence: string | null = null;
@@ -97,7 +100,6 @@ export class TransactionsService {
       userConfirmedCategory: userProvidedCategory,
     });
 
-    // FR-CAT-006 — if user sent a category with a description, treat as confirmed example
     if (userProvidedCategory && input.description?.trim()) {
       await this.classification.recordFeedback(householdId, {
         description: input.description,

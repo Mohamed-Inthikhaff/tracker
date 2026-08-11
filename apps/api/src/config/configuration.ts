@@ -22,4 +22,17 @@ export const geminiConfig = registerAs("gemini", () => ({
   fewShotLimit: Number(process.env.CLASSIFICATION_FEW_SHOT_LIMIT ?? 8),
 }));
 
-export default [databaseConfig, geminiConfig];
+export const stripeConfig = registerAs("stripe", () => ({
+  secretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  priceMonthly: process.env.STRIPE_PRICE_MONTHLY ?? "",
+  priceAnnual: process.env.STRIPE_PRICE_ANNUAL ?? "",
+  /** Free-tier monthly transaction cap (FR-BILL-007). */
+  freeMonthlyTransactions: Number(
+    process.env.FREE_TIER_MONTHLY_TRANSACTIONS ?? 100
+  ),
+  freeMonthlyOcr: Number(process.env.FREE_TIER_MONTHLY_OCR ?? 0),
+  proMonthlyOcr: Number(process.env.PRO_TIER_MONTHLY_OCR ?? 200),
+}));
+
+export default [databaseConfig, geminiConfig, stripeConfig];
