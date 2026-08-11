@@ -6,7 +6,14 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./theme/tokens.css": "./src/theme/tokens.css"
+    "./theme/tokens.css": "./src/theme/tokens.css",
+    "./button": "./src/button.tsx",
+    "./input": "./src/input.tsx",
+    "./label": "./src/label.tsx",
+    "./badge": "./src/badge.tsx",
+    "./card": "./src/card.tsx",
+    "./select": "./src/select.tsx",
+    "./cn": "./src/lib/cn.ts"
   },
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
@@ -14,13 +21,19 @@
     "lint": "node -e \"process.exit(0)\"",
     "clean": "node -e \"process.exit(0)\""
   },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
+    "tailwind-merge": "^3.6.0"
+  },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.8.3"
