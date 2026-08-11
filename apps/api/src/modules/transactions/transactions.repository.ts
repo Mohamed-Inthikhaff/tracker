@@ -22,6 +22,11 @@ export class TransactionsRepository {
     return this.repo.save(this.repo.create(data));
   }
 
+  createMany(data: CreateTransactionData[]): Promise<Transaction[]> {
+    if (data.length === 0) return Promise.resolve([]);
+    return this.repo.save(data.map((row) => this.repo.create(row)));
+  }
+
   findById(
     householdId: string,
     id: string
