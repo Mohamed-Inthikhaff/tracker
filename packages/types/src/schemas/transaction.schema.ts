@@ -27,13 +27,13 @@ export const moneyAmountSchema = z
   .refine((v) => Number(v) > 0, "amount must be greater than zero");
 
 /**
- * Phase 0: categoryId is required (manual selection).
- * Phase 1 classification may allow null + AI suggestion.
+ * Phase 1: categoryId optional — when omitted and description is present,
+ * classification.service suggests a category (FR-CAT-003).
  */
 export const createTransactionSchema = z.object({
   date: z.coerce.date(),
   type: transactionTypeSchema,
-  categoryId: z.string().uuid(),
+  categoryId: z.string().uuid().nullable().optional(),
   amount: moneyAmountSchema,
   description: z.string().max(280).optional(),
   payee: z.string().max(120).optional(),

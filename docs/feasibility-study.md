@@ -1,6 +1,6 @@
 # Technical Build Plan — Expense Tracker SaaS
 
-*Companion to the feasibility study. This is the "how we'd actually build it" document, scoped to your existing stack (NestJS/TypeORM, Next.js, Neon Postgres, AWS ECS Fargate, Stripe, Auth0, Bedrock) so most of it is extension, not net-new learning.*
+*Companion to the feasibility study. This is the "how we'd actually build it" document, scoped to your existing stack (NestJS/TypeORM, Next.js, Neon Postgres, AWS ECS Fargate, Stripe, Auth0, Google Gemini) so most of it is extension, not net-new learning.*
 
 ---
 
@@ -16,7 +16,7 @@
 | File/receipt storage | S3 + CloudFront | Same pattern as Draftlee's signature asset pipeline (S3 + CDN + presigned upload). |
 | Hosting | AWS ECS Fargate | Same as Draftlee. No new deployment paradigm. |
 | Billing | Stripe, dedicated account | Apply the 11-fix hardening pattern from Draftlee directly: idempotency keys, webhook signature guards, trial-abuse closure, Prisma/TypeORM transaction timeout handling. |
-| OCR (receipts) | Textract `AnalyzeExpense` → Bedrock (Claude Haiku) for category mapping | Textract is deterministic and ~10–20x cheaper per page than sending an image straight to an LLM; use it for the structured extraction (vendor, date, line items, total), then hand the extracted text to Bedrock only for the reasoning step — mapping a vendor/description to *your* category taxonomy. This is the same two-stage pattern (extract, then reason) you're already running in Monicio's bank-statement pipeline. |
+| OCR (receipts) | **Option A (default for Phase 2):** Gemini multimodal (`gemini-2.5-flash-lite` or Flash) — image in, structured line items + categories out. **Option B:** Textract `AnalyzeExpense` → classification.service for category mapping | Gemini collapses the two-stage extract+reason pipeline and is cheap enough on Flash-Lite. Textract remains valid if vision accuracy on messy photos needs a deterministic OCR step. |
 | Push/real-time | Socket.IO | Reuse CRM_FE's chat infrastructure pattern for live budget updates across a shared household. |
 
 Nothing here requires a new platform decision. The main new *service* is the OCR/categorization pipeline, and even that mirrors Monicio's 12-bank statement extractor almost exactly — same shape, smaller scope.
@@ -159,15 +159,15 @@ This is the feature that fixes the 52%-Misc problem, so it deserves its own deta
 
 **On manual entry (typed description):**
 1. User types "Kingsburry uber + wheel + bus + plantea" and an amount.
-2. Backend calls Bedrock (Haiku for cost/latency — same tier reasoning as Draftlee's classification) with the household's category list + a few recent confirmed examples as few-shot context.
+2. Backend calls Google Gemini (`gemini-2.5-flash-lite`) via `classification.service` with the household's category list + a few recent confirmed examples as few-shot context.
 3. Model returns a suggested category + confidence score.
 4. High confidence (>0.85): pre-select the category, user just confirms with one tap.
 5. Low confidence: surface top 2 suggestions as quick-pick chips, still one tap, but flagged internally for the feedback loop.
 6. Every confirm/override is logged (`user_confirmed_category`) and feeds back into the few-shot examples for that household — the model gets better at *your* specific spending vocabulary over time, not just a generic categorizer.
 
 **On receipt photo:**
-1. Upload → S3 → Textract `AnalyzeExpense` (vendor, total, date, line items — deterministic, cheap, fast).
-2. Extracted vendor + line items → Bedrock for category mapping (same step as above, now with structured input instead of free text — higher accuracy).
+1. Upload → S3 → Gemini multimodal (preferred) or Textract `AnalyzeExpense` (vendor, total, date, line items).
+2. If extraction is separate: vendor + line items → classification.service for category mapping (same step as manual entry, now with structured input). With Gemini vision, extraction + categories can be one call.
 3. If the receipt has multiple line items that logically split across categories (e.g. a supermarket receipt with food + household items), offer a "split this receipt" flow rather than forcing one category — this is a real gap in most competitor apps and a natural differentiator.
 
 **On SMS/notification parsing (Android, no open-banking dependency):**
@@ -198,7 +198,7 @@ Household/user/auth model, category seeding, manual transaction CRUD, CSV import
 Quick-add capture UI, Bedrock categorization with confidence-tiered confirm flow, debt ledger with auto-linking, budget-vs-actual dashboard (direct port of your Budget/Dashboard sheet logic), Stripe freemium billing.
 
 **Phase 2 — capture automation (4–5 weeks)**
-Receipt OCR (Textract + Bedrock), Android SMS/notification parsing, shared-household real-time sync (Socket.IO), budget-threshold notifications.
+Receipt OCR (Gemini vision and/or Textract + classification), Android SMS/notification parsing, shared-household real-time sync (Socket.IO), budget-threshold notifications.
 
 **Phase 3 — geography expansion (4–6 weeks, only after Phase 1–2 retention validates)**
 Plaid bank-sync integration for US/UK/EU users as a premium tier, multi-currency support, CASA-equivalent security review if you add any Gmail/Calendar-style OAuth scopes down the line.
@@ -211,8 +211,8 @@ Total to a genuinely usable, dogfoodable MVP (Phase 0+1): roughly **6–9 weeks*
 
 | Component | Build or buy | Reasoning |
 |---|---|---|
-| Categorization AI | Build (Bedrock) | You already own this exact pattern from Draftlee. No reason to pay a third party for something you can run cheaper on infra you already operate. |
-| Receipt OCR | Buy (Textract) + build (mapping logic) | Don't build OCR from scratch — Textract is cheap and purpose-built. Build only the category-mapping layer on top. |
+| Categorization AI | Build (Gemini via `@google/genai`) | Isolated behind `classification.service`. Flash-Lite is cheap enough for continuous categorization; multimodal path also unlocks simpler receipts in Phase 2. Trade-off vs original Bedrock plan: loses Draftlee AWS IAM reuse, gains one new API relationship. |
+| Receipt OCR | Build on Gemini vision (preferred) or Buy (Textract) + build (mapping) | Prefer single multimodal call; keep Textract as fallback if vision accuracy lags on messy photos. |
 | Bank aggregation (Phase 3 only) | Buy (Plaid) | Building bank connectivity yourself is a multi-year, compliance-heavy undertaking. Not viable to build in-house at this stage regardless of market. |
 | Billing | Buy (Stripe) + reuse your hardening pattern | Already solved once at Draftlee; port, don't rebuild. |
 | SMS/notification parsing | Build | No good third-party product does this well for South Asian bank/telco formats — it's also your clearest differentiator, worth owning. |

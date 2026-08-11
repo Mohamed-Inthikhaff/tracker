@@ -53,6 +53,7 @@ expense-tracker/
 | Animation | **Framer Motion** | For the quick-add confirm animation, budget-health transitions, and the receipt-split flow — used sparingly, not as a base dependency. |
 | Charts fallback for anything Tremor doesn't cover | **Recharts** | Tremor is built on Recharts, so dropping to raw Recharts for a bespoke chart (e.g. the multi-month trend view's custom interactions) stays visually consistent. |
 | Real-time | **socket.io-client** | Matches the backend's Socket.IO choice (Section 5), and is the same pattern already proven in CRM_FE's chat feature. |
+| AI classification | **Google Gemini** (`gemini-2.5-flash-lite` for text; Flash tier optional for receipt vision in Phase 2) | Isolated behind `classification.service.ts` public methods. Replaces AWS Bedrock from the original plan; multimodal Flash/Flash-Lite can later collapse dual-stage receipt OCR into one call. Env: `GEMINI_API_KEY`. |
 
 **What this buys you over a single all-in-one UI kit (MUI/Ant Design):** every component is Tailwind-based and lives in your repo, so the color system in Section 4 applies everywhere automatically via CSS variables — there's no fighting a separate theming API on top of your own design tokens.
 
@@ -221,7 +222,7 @@ export class TransactionsRepository {
 }
 ```
 
-**Example — `transactions.service.ts` (business logic, calls the classification module for a category suggestion, no ORM knowledge):**
+**Example — `transactions.service.ts` (business logic, calls classification for a category suggestion, no ORM knowledge and no Gemini SDK import):**
 
 ```typescript
 import { Injectable } from "@nestjs/common";
@@ -520,7 +521,7 @@ Each phase lists: goal, new DB migrations, new/changed backend modules, new fron
 | Area | Deliverable |
 |---|---|
 | DB migrations | `debts`, `budgets`, `subscriptions`, add `ai_confidence`/`user_confirmed_category` columns to `transactions` |
-| Backend modules | `classification/` (Bedrock categorization), `debts/`, `budgets/`, `billing/` (Stripe) |
+| Backend modules | `classification/` (Gemini categorization via `@google/genai`), `debts/`, `budgets/`, `billing/` (Stripe) |
 | Frontend features | Quick-add capture UI (`apps/capture`), category-confirm chip, debt ledger screens, budget-vs-actual screen, Dashboard KPI cards + category breakdown (Tremor) |
 | Libraries introduced | Tremor, Zustand, Framer Motion (quick-add confirm animation) |
 | Exit criteria | A new user can sign up, import or manually log a month of transactions, get AI category suggestions above the confidence threshold at least 70% of the time, set a budget, and see accurate variance — all without touching a spreadsheet |
@@ -532,7 +533,7 @@ Each phase lists: goal, new DB migrations, new/changed backend modules, new fron
 | Area | Deliverable |
 |---|---|
 | DB migrations | `receipts` table, `accounts` table (for future bank-sync readiness, unused until Phase 3) |
-| Backend modules | `receipts/` (Textract + Bedrock pipeline), `notifications/` (Socket.IO), SMS-parsing endpoint inside `imports/` |
+| Backend modules | `receipts/` (Gemini vision or Textract+classify pipeline — decide at Phase 2), `notifications/` (Socket.IO), SMS-parsing endpoint inside `imports/` |
 | Frontend features | Receipt capture flow + "split this receipt" UI, real-time household activity feed, budget-threshold notifications, Android SMS opt-in flow (native permission bridge from the PWA) |
 | Libraries introduced | socket.io-client, a lightweight camera-capture wrapper for the PWA |
 | Exit criteria | A receipt photo produces a correctly categorized transaction (or a clean split) without manual re-typing in the common case; a household member's edit appears on another member's screen without a refresh |

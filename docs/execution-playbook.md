@@ -212,17 +212,19 @@ bug or an aggregation query bug before we move to Phase 1.
 
 ```
 Build the classification module in apps/api/src/modules/classification/,
-same file structure pattern as prior modules. Implement FR-CAT-003 through
-FR-CAT-006 from @docs/srs.md: given a transaction description, call AWS
-Bedrock (use the Bedrock client pattern — ask me for the specific model ID
-and prompt template we're using elsewhere in the org if you need it, don't
-invent one) to return a suggested categoryId and a confidence score. Store
-household-specific confirmed/overridden examples and include the most recent
-ones as few-shot context in the prompt. Do not couple this module directly
-to the transactions module's internals — transactions.service.ts should call
-classification.service.ts through its public method only, per the
-architecture in @docs/implementation-plan.md Section 5.1's transactions.service.ts
-example.
+same file structure pattern as prior modules (module, controller, service,
+repository if needed, entities/, dto/, interfaces/, spec file). Implement
+FR-CAT-003 through FR-CAT-006 from @docs/srs.md: given a transaction
+description, call the Google Gemini API (use @google/genai, model
+gemini-2.5-flash-lite) to return a suggested categoryId and a confidence
+score. Store the API key via GEMINI_API_KEY env var, following the same
+config-loading pattern as apps/api/src/config/configuration.ts already uses
+for other secrets. Store household-specific confirmed/overridden examples
+and include the most recent ones as few-shot context in the prompt. Do not
+couple this module directly to the transactions module's internals —
+transactions.service.ts should call classification.service.ts through its
+public method only. Ask me for exact prompt wording/taxonomy expectations if
+the category list format isn't clear from the categories module's schema.
 ```
 
 ### 3.2 Debts module
@@ -282,8 +284,8 @@ instant even before the server confirms.
 ```
 Build the receipts module (apps/api/src/modules/receipts/) covering
 FR-RCPT-001 through FR-RCPT-006: S3 presigned upload, AWS Textract
-AnalyzeExpense for structured extraction, then Bedrock (via
-classification.service.ts, reused rather than duplicated) for category
+AnalyzeExpense or Gemini multimodal for extraction, then classification
+(via classification.service.ts, reused rather than duplicated) for category
 mapping. Include the "split this receipt" flow from FR-RCPT-004/FR-TXN-007 as
 a distinct step, not bolted onto the create-transaction endpoint.
 ```

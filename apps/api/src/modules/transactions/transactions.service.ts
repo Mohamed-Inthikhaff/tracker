@@ -10,6 +10,7 @@ import type {
   TransactionType,
 } from "@expense-tracker/types";
 import { CategoriesService } from "../categories/categories.service";
+import { ClassificationService } from "../classification/classification.service";
 import { HouseholdsRepository } from "../households/households.repository";
 import { TransactionsRepository } from "./transactions.repository";
 import type {
@@ -24,12 +25,13 @@ export class TransactionsService {
   constructor(
     private readonly repo: TransactionsRepository,
     private readonly categories: CategoriesService,
-    private readonly households: HouseholdsRepository
+    private readonly households: HouseholdsRepository,
+    private readonly classification: ClassificationService
   ) {}
 
   /**
-   * FR-TXN-001 / FR-TXN-004 / FR-TXN-006 — create with required category (Phase 0).
-   * No AI classification in this phase.
+   * FR-TXN-001 + FR-CAT-003 — create; optional AI category when no categoryId.
+   * Calls classification only through its public method (plan §5.1).
    */
   async create(
     householdId: string,
@@ -43,10 +45,32 @@ export class TransactionsService {
       );
     }
 
-    const category = await this.categories.getById(
-      householdId,
-      input.categoryId
-    );
+    const household = await this.households.findHouseholdById(householdId);
+    if (!household) {
+      throw new NotFoundException("Household not found");
+    }
+
+    let categoryId = input.categoryId ?? null;
+    let aiConfidence: string | null = null;
+    const userProvidedCategory = Boolean(categoryId);
+
+    if (!categoryId && input.description?.trim()) {
+      const suggestion = await this.classification.suggestCategory(
+        householdId,
+        input.description,
+        input.type
+      );
+      categoryId = suggestion.categoryId;
+      aiConfidence = suggestion.confidence.toFixed(3);
+    }
+
+    if (!categoryId) {
+      throw new BadRequestException(
+        "categoryId is required when description is missing (no AI suggestion possible)"
+      );
+    }
+
+    const category = await this.categories.getById(householdId, categoryId);
     if (!category.isActive) {
       throw new BadRequestException("Category is inactive");
     }
@@ -56,15 +80,10 @@ export class TransactionsService {
       );
     }
 
-    const household = await this.households.findHouseholdById(householdId);
-    if (!household) {
-      throw new NotFoundException("Household not found");
-    }
-
     const amount = normalizeAmount(input.amount);
     const created = await this.repo.createOne({
       householdId,
-      categoryId: input.categoryId,
+      categoryId,
       createdByUserId: user.id,
       txnDate: toDateOnly(input.date),
       type: input.type,
@@ -74,9 +93,18 @@ export class TransactionsService {
       payee: input.payee?.trim() || null,
       notes: input.notes?.trim() || null,
       source: input.source ?? "manual",
-      aiConfidence: null,
-      userConfirmedCategory: true,
+      aiConfidence,
+      userConfirmedCategory: userProvidedCategory,
     });
+
+    // FR-CAT-006 — if user sent a category with a description, treat as confirmed example
+    if (userProvidedCategory && input.description?.trim()) {
+      await this.classification.recordFeedback(householdId, {
+        description: input.description,
+        categoryId,
+        accepted: true,
+      });
+    }
 
     return toView(created);
   }
@@ -89,7 +117,6 @@ export class TransactionsService {
     return toView(txn);
   }
 
-  /** FR-TXN-005 — filter/search list with pagination. */
   async list(
     householdId: string,
     query: QueryTransactionsInput
@@ -122,10 +149,6 @@ export class TransactionsService {
     };
   }
 
-  /**
-   * Monthly / range totals by type — Phase 0 exit criterion helper.
-   * Matches spreadsheet Dashboard TOTAL INCOME / EXPENSE / SAVING / NET.
-   */
   async monthlySummary(
     householdId: string,
     query: MonthlySummaryQuery

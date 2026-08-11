@@ -7,12 +7,13 @@ import { HouseholdScopeGuard } from "./common/guards/household-scope.guard";
 import { HouseholdContextInterceptor } from "./common/interceptors/household-context.interceptor";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { ZodValidationPipe } from "./common/pipes/zod-validation.pipe";
-import databaseConfig from "./config/configuration";
+import configs from "./config/configuration";
 import { HealthController } from "./health.controller";
 import { HouseholdsModule } from "./modules/households/households.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { ImportsModule } from "./modules/imports/imports.module";
+import { ClassificationModule } from "./modules/classification/classification.module";
 import { Household } from "./modules/households/entities/household.entity";
 import { HouseholdMember } from "./modules/households/entities/household-member.entity";
 import { HouseholdInvite } from "./modules/households/entities/household-invite.entity";
@@ -20,12 +21,13 @@ import { User } from "./modules/households/entities/user.entity";
 import { Category } from "./modules/categories/entities/category.entity";
 import { Transaction } from "./modules/transactions/entities/transaction.entity";
 import { ImportBatch } from "./modules/imports/entities/import-batch.entity";
+import { ClassificationExample } from "./modules/classification/entities/classification-example.entity";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig],
+      load: configs,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -44,6 +46,7 @@ import { ImportBatch } from "./modules/imports/entities/import-batch.entity";
           Category,
           Transaction,
           ImportBatch,
+          ClassificationExample,
         ],
         migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
         synchronize: config.get<boolean>("database.synchronize") ?? false,
@@ -52,6 +55,7 @@ import { ImportBatch } from "./modules/imports/entities/import-batch.entity";
     }),
     HouseholdsModule,
     CategoriesModule,
+    ClassificationModule,
     TransactionsModule,
     ImportsModule,
   ],

@@ -9,3 +9,4 @@ export * from "./schemas/household.schema";
 export * from "./schemas/category.schema";
 export * from "./schemas/transaction.schema";
 export * from "./schemas/import.schema";
+export * from "./schemas/classification.schema";

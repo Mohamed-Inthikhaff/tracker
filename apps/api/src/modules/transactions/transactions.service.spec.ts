@@ -2,6 +2,7 @@ import { TransactionsService } from "./transactions.service";
 import type { TransactionsRepository } from "./transactions.repository";
 import type { CategoriesService } from "../categories/categories.service";
 import type { HouseholdsRepository } from "../households/households.repository";
+import type { ClassificationService } from "../classification/classification.service";
 import type { Transaction } from "./entities/transaction.entity";
 import type { User } from "../households/entities/user.entity";
 import type { Household } from "../households/entities/household.entity";
@@ -12,6 +13,9 @@ describe("TransactionsService", () => {
   let categories: jest.Mocked<Pick<CategoriesService, "getById">>;
   let households: jest.Mocked<
     Pick<HouseholdsRepository, "findUserByAuth0Sub" | "findHouseholdById">
+  >;
+  let classification: jest.Mocked<
+    Pick<ClassificationService, "suggestCategory" | "recordFeedback">
   >;
 
   const householdId = "33333333-3333-3333-3333-333333333333";
@@ -73,10 +77,16 @@ describe("TransactionsService", () => {
       findHouseholdById: jest.fn(),
     };
 
+    classification = {
+      suggestCategory: jest.fn(),
+      recordFeedback: jest.fn().mockResolvedValue({ id: "fb-1" }),
+    };
+
     service = new TransactionsService(
       repo,
       categories as unknown as CategoriesService,
-      households as unknown as HouseholdsRepository
+      households as unknown as HouseholdsRepository,
+      classification as unknown as ClassificationService
     );
   });
 
@@ -119,14 +129,61 @@ describe("TransactionsService", () => {
           aiConfidence: null,
         })
       );
+      expect(classification.suggestCategory).not.toHaveBeenCalled();
+      expect(classification.recordFeedback).toHaveBeenCalled();
       expect(result.amount).toBe("42.50");
       expect(typeof result.amount).toBe("string");
       expect(result.createdByUserId).toBe(user.id);
       expect(result.createdAt).toBeInstanceOf(Date);
     });
 
+    it("asks classification when categoryId is omitted (FR-CAT-003)", async () => {
+      households.findUserByAuth0Sub.mockResolvedValue(user);
+      households.findHouseholdById.mockResolvedValue(household);
+      classification.suggestCategory.mockResolvedValue({
+        categoryId,
+        confidence: 0.91,
+        highConfidence: true,
+        alternatives: [],
+        model: "gemini-2.5-flash-lite",
+      });
+      categories.getById.mockResolvedValue({
+        id: categoryId,
+        householdId,
+        name: "Food",
+        type: "Expense",
+        parentCategoryId: null,
+        isSystemDefault: true,
+        isActive: true,
+        sortOrder: 200,
+      });
+      repo.createOne.mockResolvedValue(txn);
+
+      await service.create(householdId, auth0Sub, {
+        date: new Date("2026-03-15"),
+        type: "Expense",
+        amount: "10.00",
+        description: "grocery store",
+        source: "manual",
+      });
+
+      expect(classification.suggestCategory).toHaveBeenCalledWith(
+        householdId,
+        "grocery store",
+        "Expense"
+      );
+      expect(repo.createOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categoryId,
+          aiConfidence: "0.910",
+          userConfirmedCategory: false,
+        })
+      );
+    });
+
     it("rejects category type mismatch", async () => {
       households.findUserByAuth0Sub.mockResolvedValue(user);
+      households.findHouseholdById.mockResolvedValue(household);
       categories.getById.mockResolvedValue({
         id: categoryId,
         householdId,

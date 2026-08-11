@@ -13,6 +13,7 @@
   "dependencies": {
     "@expense-tracker/types": "*",
     "@expense-tracker/utils": "*",
+    "@google/genai": "^2.16.0",
     "@nestjs/common": "^11.0.12",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.12",
