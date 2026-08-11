@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import type { TransactionType } from "@expense-tracker/types";
 import { Transaction } from "./entities/transaction.entity";
 import type {
   CreateTransactionData,
@@ -119,6 +120,40 @@ export class TransactionsRepository {
       .andWhere("t.txn_date >= :start", { start: toDateOnly(start) })
       .andWhere("t.txn_date <= :end", { end: toDateOnly(endInclusive) })
       .getCount();
+  }
+
+  /**
+   * Sum amounts for debt repayment auto-link (FR-DEBT-002/003).
+   * window: [dateFromInclusive, dateToExclusive) ; open-ended if dateToExclusive null.
+   * Payee match is case-insensitive trimmed equality.
+   */
+  async sumAmountByPayeeTypeAndWindow(opts: {
+    householdId: string;
+    payee: string;
+    type: TransactionType;
+    dateFromInclusive: string;
+    dateToExclusive: string | null;
+  }): Promise<string> {
+    const qb = this.repo
+      .createQueryBuilder("t")
+      .select("COALESCE(SUM(t.amount), 0)", "total")
+      .where("t.household_id = :householdId", {
+        householdId: opts.householdId,
+      })
+      .andWhere("t.type = :type", { type: opts.type })
+      .andWhere("LOWER(TRIM(t.payee)) = LOWER(TRIM(:payee))", {
+        payee: opts.payee,
+      })
+      .andWhere("t.txn_date >= :from", { from: opts.dateFromInclusive });
+
+    if (opts.dateToExclusive) {
+      qb.andWhere("t.txn_date < :toExclusive", {
+        toExclusive: opts.dateToExclusive,
+      });
+    }
+
+    const row = await qb.getRawOne<{ total: string }>();
+    return normalizeMoney(row?.total ?? "0");
   }
 }
 

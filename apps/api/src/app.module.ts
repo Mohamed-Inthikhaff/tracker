@@ -14,6 +14,7 @@ import { CategoriesModule } from "./modules/categories/categories.module";
 import { TransactionsModule } from "./modules/transactions/transactions.module";
 import { ImportsModule } from "./modules/imports/imports.module";
 import { ClassificationModule } from "./modules/classification/classification.module";
+import { DebtsModule } from "./modules/debts/debts.module";
 import { Household } from "./modules/households/entities/household.entity";
 import { HouseholdMember } from "./modules/households/entities/household-member.entity";
 import { HouseholdInvite } from "./modules/households/entities/household-invite.entity";
@@ -22,6 +23,7 @@ import { Category } from "./modules/categories/entities/category.entity";
 import { Transaction } from "./modules/transactions/entities/transaction.entity";
 import { ImportBatch } from "./modules/imports/entities/import-batch.entity";
 import { ClassificationExample } from "./modules/classification/entities/classification-example.entity";
+import { Debt } from "./modules/debts/entities/debt.entity";
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { ClassificationExample } from "./modules/classification/entities/classif
           Transaction,
           ImportBatch,
           ClassificationExample,
+          Debt,
         ],
         migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
         synchronize: config.get<boolean>("database.synchronize") ?? false,
@@ -58,6 +61,7 @@ import { ClassificationExample } from "./modules/classification/entities/classif
     ClassificationModule,
     TransactionsModule,
     ImportsModule,
+    DebtsModule,
   ],
   controllers: [HealthController],
   providers: [
