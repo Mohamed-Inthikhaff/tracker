@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
+import { CategoriesModule } from "../categories/categories.module";
 import { Household } from "./entities/household.entity";
 import { HouseholdMember } from "./entities/household-member.entity";
 import { HouseholdInvite } from "./entities/household-invite.entity";
@@ -16,6 +17,7 @@ import { HouseholdsRepository } from "./households.repository";
       HouseholdInvite,
       User,
     ]),
+    CategoriesModule,
   ],
   controllers: [HouseholdsController],
   providers: [HouseholdsService, HouseholdsRepository],

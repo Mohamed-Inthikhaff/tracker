@@ -10,6 +10,7 @@ import type {
   InviteMemberInput,
   UpdateHouseholdInput,
 } from "@expense-tracker/types";
+import { CategoriesService } from "../categories/categories.service";
 import { HouseholdsRepository } from "./households.repository";
 import type {
   BootstrapResult,
@@ -32,11 +33,15 @@ import {
 
 @Injectable()
 export class HouseholdsService {
-  constructor(private readonly repo: HouseholdsRepository) {}
+  constructor(
+    private readonly repo: HouseholdsRepository,
+    private readonly categories: CategoriesService
+  ) {}
 
   /**
    * FR-AUTH-002 — exactly one default Household on first successful registration.
    * Idempotent; `auth0Sub` is the JWT `sub` claim.
+   * Also seeds default categories (FR-CAT-001).
    */
   async createDefaultOnRegistration(
     auth0Sub: string,
@@ -76,6 +81,8 @@ export class HouseholdsService {
       role: "Owner",
     });
 
+    await this.categories.seedDefaultsForHousehold(household.id);
+
     return {
       userId: user.id,
       household: toHouseholdSummary(household, "Owner"),
@@ -98,6 +105,7 @@ export class HouseholdsService {
       userId: user.id,
       role: "Owner",
     });
+    await this.categories.seedDefaultsForHousehold(household.id);
     return toHouseholdSummary(household, "Owner");
   }
 
@@ -180,10 +188,6 @@ export class HouseholdsService {
     return acceptHouseholdInvite(this.repo, auth0Sub, email, token);
   }
 
-  /**
-   * FR-AUTH-006 — owner removes a member; access revoked immediately.
-   * `targetUserId` is internal users.id (from listMembers).
-   */
   async removeMember(
     householdId: string,
     auth0Sub: string,
@@ -214,7 +218,6 @@ export class HouseholdsService {
     }
   }
 
-  /** Active membership check (ids are internal UUIDs). */
   async hasAccess(householdId: string, userId: string): Promise<boolean> {
     const membership = await this.repo.findActiveMembership(
       householdId,

@@ -10,10 +10,12 @@ import { ZodValidationPipe } from "./common/pipes/zod-validation.pipe";
 import databaseConfig from "./config/configuration";
 import { HealthController } from "./health.controller";
 import { HouseholdsModule } from "./modules/households/households.module";
+import { CategoriesModule } from "./modules/categories/categories.module";
 import { Household } from "./modules/households/entities/household.entity";
 import { HouseholdMember } from "./modules/households/entities/household-member.entity";
 import { HouseholdInvite } from "./modules/households/entities/household-invite.entity";
 import { User } from "./modules/households/entities/user.entity";
+import { Category } from "./modules/categories/entities/category.entity";
 
 @Module({
   imports: [
@@ -30,15 +32,20 @@ import { User } from "./modules/households/entities/user.entity";
         username: config.get<string>("database.username"),
         password: config.get<string>("database.password"),
         database: config.get<string>("database.name"),
-        entities: [Household, HouseholdMember, HouseholdInvite, User],
-        migrations: [
-          __dirname + "/database/migrations/*{.ts,.js}",
+        entities: [
+          Household,
+          HouseholdMember,
+          HouseholdInvite,
+          User,
+          Category,
         ],
+        migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
         synchronize: config.get<boolean>("database.synchronize") ?? false,
         logging: config.get<boolean>("database.logging") ?? false,
       }),
     }),
     HouseholdsModule,
+    CategoriesModule,
   ],
   controllers: [HealthController],
   providers: [

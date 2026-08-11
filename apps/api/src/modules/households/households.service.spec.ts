@@ -3,10 +3,12 @@ import type { HouseholdsRepository } from "./households.repository";
 import type { Household } from "./entities/household.entity";
 import type { HouseholdMember } from "./entities/household-member.entity";
 import type { User } from "./entities/user.entity";
+import type { CategoriesService } from "../categories/categories.service";
 
 describe("HouseholdsService", () => {
   let service: HouseholdsService;
   let repo: jest.Mocked<HouseholdsRepository>;
+  let categories: jest.Mocked<Pick<CategoriesService, "seedDefaultsForHousehold">>;
 
   const ownerUser: User = {
     id: "11111111-1111-1111-1111-111111111111",
@@ -56,7 +58,16 @@ describe("HouseholdsService", () => {
       saveInvite: jest.fn(),
     } as unknown as jest.Mocked<HouseholdsRepository>;
 
-    service = new HouseholdsService(repo);
+    categories = {
+      seedDefaultsForHousehold: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<
+      Pick<CategoriesService, "seedDefaultsForHousehold">
+    >;
+
+    service = new HouseholdsService(
+      repo,
+      categories as unknown as CategoriesService
+    );
   });
 
   describe("createDefaultOnRegistration (FR-AUTH-002)", () => {
@@ -94,6 +105,9 @@ describe("HouseholdsService", () => {
         userId: ownerUser.id,
         role: "Owner",
       });
+      expect(categories.seedDefaultsForHousehold).toHaveBeenCalledWith(
+        household.id
+      );
     });
 
     it("is idempotent when the user already has a default household", async () => {
