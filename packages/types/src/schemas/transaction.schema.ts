@@ -54,3 +54,14 @@ export const queryTransactionsSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 export type QueryTransactionsInput = z.infer<typeof queryTransactionsSchema>;
+
+/** Month as YYYY-MM for Dashboard-style KPI aggregation (Phase 0 exit check). */
+export const monthlySummaryQuerySchema = z.object({
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "month must be YYYY-MM")
+    .optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+});
+export type MonthlySummaryQuery = z.infer<typeof monthlySummaryQuerySchema>;

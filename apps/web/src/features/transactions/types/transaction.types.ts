@@ -45,3 +45,18 @@ export interface TransactionListParams {
   limit?: number;
   offset?: number;
 }
+
+export interface MonthlyTotalsSummary {
+  dateFrom: string;
+  dateTo: string;
+  month: string | null;
+  count: number;
+  byType: {
+    Income: string;
+    Expense: string;
+    Saving: string;
+    DebtGiven: string;
+    DebtReceived: string;
+  };
+  netBalance: string;
+}

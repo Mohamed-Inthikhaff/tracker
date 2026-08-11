@@ -5,12 +5,15 @@ import {
 } from "@nestjs/common";
 import type {
   CreateTransactionInput,
+  MonthlySummaryQuery,
   QueryTransactionsInput,
+  TransactionType,
 } from "@expense-tracker/types";
 import { CategoriesService } from "../categories/categories.service";
 import { HouseholdsRepository } from "../households/households.repository";
 import { TransactionsRepository } from "./transactions.repository";
 import type {
+  MonthlyTotalsSummary,
   TransactionListResult,
   TransactionView,
 } from "./interfaces/transaction.interface";
@@ -72,17 +75,13 @@ export class TransactionsService {
       notes: input.notes?.trim() || null,
       source: input.source ?? "manual",
       aiConfidence: null,
-      // Manual category in Phase 0 counts as confirmed (FR-TXN / FR-CAT-006 prep).
       userConfirmedCategory: true,
     });
 
     return toView(created);
   }
 
-  async getById(
-    householdId: string,
-    id: string
-  ): Promise<TransactionView> {
+  async getById(householdId: string, id: string): Promise<TransactionView> {
     const txn = await this.repo.findById(householdId, id);
     if (!txn) {
       throw new NotFoundException("Transaction not found");
@@ -122,6 +121,79 @@ export class TransactionsService {
       offset: query.offset,
     };
   }
+
+  /**
+   * Monthly / range totals by type — Phase 0 exit criterion helper.
+   * Matches spreadsheet Dashboard TOTAL INCOME / EXPENSE / SAVING / NET.
+   */
+  async monthlySummary(
+    householdId: string,
+    query: MonthlySummaryQuery
+  ): Promise<MonthlyTotalsSummary> {
+    const { start, end, month } = resolveSummaryRange(query);
+    const rows = await this.repo.sumByType(householdId, start, end);
+    const count = await this.repo.countByHouseholdAndRange(
+      householdId,
+      start,
+      end
+    );
+
+    const byType: MonthlyTotalsSummary["byType"] = {
+      Income: "0.00",
+      Expense: "0.00",
+      Saving: "0.00",
+      DebtGiven: "0.00",
+      DebtReceived: "0.00",
+    };
+
+    for (const row of rows) {
+      if (row.type in byType) {
+        byType[row.type as TransactionType] = row.total;
+      }
+    }
+
+    return {
+      dateFrom: toDateOnly(start),
+      dateTo: toDateOnly(end),
+      month,
+      count,
+      byType,
+      netBalance: subtractMoney(byType.Income, byType.Expense),
+    };
+  }
+}
+
+function resolveSummaryRange(query: MonthlySummaryQuery): {
+  start: Date;
+  end: Date;
+  month: string | null;
+} {
+  if (query.month) {
+    const [y, m] = query.month.split("-").map(Number);
+    if (!y || !m || m < 1 || m > 12) {
+      throw new BadRequestException("Invalid month");
+    }
+    const start = new Date(Date.UTC(y, m - 1, 1));
+    const end = new Date(Date.UTC(y, m, 0));
+    return { start, end, month: query.month };
+  }
+
+  if (query.dateFrom && query.dateTo) {
+    if (query.dateFrom.getTime() > query.dateTo.getTime()) {
+      throw new BadRequestException("dateFrom must be on or before dateTo");
+    }
+    return {
+      start: query.dateFrom,
+      end: query.dateTo,
+      month: null,
+    };
+  }
+
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth() + 1;
+  const month = `${y}-${String(m).padStart(2, "0")}`;
+  return resolveSummaryRange({ month });
 }
 
 function toView(txn: Transaction): TransactionView {
@@ -153,11 +225,23 @@ function normalizeDateField(value: string | Date): string {
   return value.slice(0, 10);
 }
 
-/** Keep money as a 2-decimal string — never promote to binary float ops. */
 function normalizeAmount(amount: string): string {
   if (!/^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/.test(amount)) {
     throw new BadRequestException("Invalid amount format");
   }
   const [whole, frac = ""] = amount.split(".");
   return `${whole}.${frac.padEnd(2, "0")}`;
+}
+
+function subtractMoney(a: string, b: string): string {
+  const cents = (s: string) => {
+    const [w, f = "00"] = s.split(".");
+    return Number(w) * 100 + Number((f + "00").slice(0, 2));
+  };
+  const diff = cents(a) - cents(b);
+  const sign = diff < 0 ? "-" : "";
+  const abs = Math.abs(diff);
+  const whole = Math.floor(abs / 100);
+  const frac = String(abs % 100).padStart(2, "0");
+  return `${sign}${whole}.${frac}`;
 }

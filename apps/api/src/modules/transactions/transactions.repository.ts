@@ -82,21 +82,43 @@ export class TransactionsRepository {
     return { items, total };
   }
 
-  /** Sum of amounts for household + month (helpers for Phase 0 exit checks). */
-  async sumByHouseholdAndMonth(
+  /** Totals by type for household date range (Phase 0 Dashboard comparison). */
+  async sumByType(
     householdId: string,
     start: Date,
-    end: Date
-  ): Promise<string> {
-    const row = await this.repo
+    endInclusive: Date
+  ): Promise<
+    Array<{ type: string; total: string; count: string }>
+  > {
+    const rows = await this.repo
       .createQueryBuilder("t")
-      .select("COALESCE(SUM(t.amount), 0)", "total")
+      .select("t.type", "type")
+      .addSelect("COALESCE(SUM(t.amount), 0)", "total")
+      .addSelect("COUNT(*)", "count")
       .where("t.household_id = :householdId", { householdId })
       .andWhere("t.txn_date >= :start", { start: toDateOnly(start) })
-      .andWhere("t.txn_date < :end", { end: toDateOnly(end) })
-      .getRawOne<{ total: string }>();
+      .andWhere("t.txn_date <= :end", { end: toDateOnly(endInclusive) })
+      .groupBy("t.type")
+      .getRawMany<{ type: string; total: string; count: string }>();
 
-    return normalizeMoney(row?.total ?? "0");
+    return rows.map((r) => ({
+      type: r.type,
+      total: normalizeMoney(r.total),
+      count: String(r.count),
+    }));
+  }
+
+  async countByHouseholdAndRange(
+    householdId: string,
+    start: Date,
+    endInclusive: Date
+  ): Promise<number> {
+    return this.repo
+      .createQueryBuilder("t")
+      .where("t.household_id = :householdId", { householdId })
+      .andWhere("t.txn_date >= :start", { start: toDateOnly(start) })
+      .andWhere("t.txn_date <= :end", { end: toDateOnly(endInclusive) })
+      .getCount();
   }
 }
 

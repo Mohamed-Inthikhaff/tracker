@@ -29,6 +29,24 @@ export interface TransactionListResult {
   offset: number;
 }
 
+/** Dashboard-compatible monthly / range KPIs (Phase 0 exit criterion). */
+export interface MonthlyTotalsSummary {
+  /** Inclusive range used, YYYY-MM-DD. */
+  dateFrom: string;
+  dateTo: string;
+  month: string | null;
+  count: number;
+  byType: {
+    Income: string;
+    Expense: string;
+    Saving: string;
+    DebtGiven: string;
+    DebtReceived: string;
+  };
+  /** Income − Expense (Dashboard NET BALANCE). */
+  netBalance: string;
+}
+
 export interface CreateTransactionData {
   householdId: string;
   categoryId: string;

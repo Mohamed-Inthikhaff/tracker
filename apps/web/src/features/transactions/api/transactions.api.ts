@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/api-client";
 import type {
   CreateTransactionInput,
+  MonthlyTotalsSummary,
   Transaction,
   TransactionListParams,
   TransactionListResult,
@@ -19,6 +20,11 @@ export const transactionsApi = {
         limit: params.limit,
         offset: params.offset,
       },
+    }),
+
+  summary: (params: { month?: string; dateFrom?: string; dateTo?: string }) =>
+    apiClient.get<MonthlyTotalsSummary>("/transactions/summary", {
+      params,
     }),
 
   get: (id: string) => apiClient.get<Transaction>(`/transactions/${id}`),

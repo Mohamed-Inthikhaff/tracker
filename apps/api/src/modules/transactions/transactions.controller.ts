@@ -12,6 +12,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import type { JwtUserClaims } from "../../common/interfaces/authenticated-request.interface";
 import {
   CreateTransactionDto,
+  MonthlySummaryQueryDto,
   QueryTransactionsDto,
 } from "./dto/transaction.dto";
 import { TransactionsService } from "./transactions.service";
@@ -35,6 +36,15 @@ export class TransactionsController {
     @Query() query: QueryTransactionsDto
   ) {
     return this.transactions.list(householdId, query);
+  }
+
+  /** Phase 0 exit criterion — compare to spreadsheet Dashboard KPIs. */
+  @Get("summary")
+  summary(
+    @CurrentHousehold() householdId: string,
+    @Query() query: MonthlySummaryQueryDto
+  ) {
+    return this.transactions.monthlySummary(householdId, query);
   }
 
   @Get(":id")

@@ -59,7 +59,9 @@ describe("TransactionsService", () => {
       createOne: jest.fn(),
       findById: jest.fn(),
       search: jest.fn(),
-      sumByHouseholdAndMonth: jest.fn(),
+      createMany: jest.fn(),
+      sumByType: jest.fn(),
+      countByHouseholdAndRange: jest.fn(),
     } as unknown as jest.Mocked<TransactionsRepository>;
 
     categories = {
@@ -176,6 +178,28 @@ describe("TransactionsService", () => {
       expect(result.total).toBe(1);
       expect(result.items[0]?.description).toBe("Weekly groceries");
       expect(result.items[0]?.amount).toBe("42.50");
+    });
+  });
+
+  describe("monthlySummary (Phase 0 exit criterion)", () => {
+    it("returns Dashboard-style Income/Expense/Net for a month", async () => {
+      repo.sumByType.mockResolvedValue([
+        { type: "Income", total: "72452.00", count: "5" },
+        { type: "Expense", total: "45481.00", count: "16" },
+      ]);
+      repo.countByHouseholdAndRange.mockResolvedValue(21);
+
+      const result = await service.monthlySummary(householdId, {
+        month: "2026-08",
+      });
+
+      expect(result.month).toBe("2026-08");
+      expect(result.dateFrom).toBe("2026-08-01");
+      expect(result.dateTo).toBe("2026-08-31");
+      expect(result.count).toBe(21);
+      expect(result.byType.Income).toBe("72452.00");
+      expect(result.byType.Expense).toBe("45481.00");
+      expect(result.netBalance).toBe("26971.00");
     });
   });
 });

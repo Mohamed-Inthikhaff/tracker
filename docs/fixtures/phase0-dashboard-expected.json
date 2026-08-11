@@ -1,0 +1,81 @@
+{
+  "fixture": "Expense_Tracker_Automation Last.xlsx",
+  "sheets": ["Transactions", "Categories", "Debts", "Budget", "Dashboard"],
+  "notes": [
+    "Dashboard Monthly Trend Income/Expense matches SUM of Transactions by calendar month.",
+    "1 row has blank Date (Clothing · Tailor Fees 700) — will fail CSV date parse; remaining 336 dated rows should import.",
+    "January includes one Saving 15000 not shown as Dashboard TOTAL SAVING when other months selected.",
+    "Compare API GET /transactions/summary?month=YYYY-MM byType.Income/Expense/(Saving) to Dashboard trend and KPI cards."
+  ],
+  "rowCountTransactions": 337,
+  "importableDatedRows": 336,
+  "blankDateRows": [
+    {
+      "type": "Expense",
+      "category": "Clothing",
+      "description": "Tailor Fees for Shirt Alternation",
+      "amount": "700.00"
+    }
+  ],
+  "dashboardMonthlyTrend": {
+    "2026-01": { "Income": "88104.00", "Expense": "51551.00" },
+    "2026-02": { "Income": "155657.00", "Expense": "134887.00" },
+    "2026-03": { "Income": "119965.00", "Expense": "101170.00" },
+    "2026-04": { "Income": "179482.00", "Expense": "162040.00" },
+    "2026-05": { "Income": "216245.00", "Expense": "186326.00" },
+    "2026-06": { "Income": "172769.00", "Expense": "158620.00" },
+    "2026-07": { "Income": "216461.80", "Expense": "145510.00" },
+    "2026-08": { "Income": "72452.00", "Expense": "45481.00", "Saving": "0.00", "netBalance": "26971.00" }
+  },
+  "transactionsSheetByMonth": {
+    "2026-01": {
+      "Income": "88104.00",
+      "Expense": "51551.00",
+      "Saving": "15000.00",
+      "count": 36
+    },
+    "2026-02": {
+      "Income": "155657.00",
+      "Expense": "134887.00",
+      "Saving": "0.00",
+      "count": 42
+    },
+    "2026-03": {
+      "Income": "119965.00",
+      "Expense": "101170.00",
+      "Saving": "0.00",
+      "count": 42
+    },
+    "2026-04": {
+      "Income": "179482.00",
+      "Expense": "162040.00",
+      "Saving": "0.00",
+      "count": 43
+    },
+    "2026-05": {
+      "Income": "216245.00",
+      "Expense": "186326.00",
+      "Saving": "0.00",
+      "count": 43
+    },
+    "2026-06": {
+      "Income": "172769.00",
+      "Expense": "158620.00",
+      "Saving": "0.00",
+      "count": 43
+    },
+    "2026-07": {
+      "Income": "216461.80",
+      "Expense": "145510.00",
+      "Saving": "0.00",
+      "count": 66
+    },
+    "2026-08": {
+      "Income": "72452.00",
+      "Expense": "45481.00",
+      "Saving": "0.00",
+      "count": 21,
+      "netBalance": "26971.00"
+    }
+  }
+}
