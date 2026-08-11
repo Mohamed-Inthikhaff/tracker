@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { SKIP_HOUSEHOLD_SCOPE_KEY } from "../decorators/skip-household-scope.decorator";
 import type { AuthenticatedRequest } from "../interfaces/authenticated-request.interface";
 
 /**
@@ -24,6 +25,14 @@ export class HouseholdScopeGuard implements CanActivate {
       context.getClass(),
     ]);
     if (isPublic) {
+      return true;
+    }
+
+    const skipHousehold = this.reflector.getAllAndOverride<boolean>(
+      SKIP_HOUSEHOLD_SCOPE_KEY,
+      [context.getHandler(), context.getClass()]
+    );
+    if (skipHousehold) {
       return true;
     }
 

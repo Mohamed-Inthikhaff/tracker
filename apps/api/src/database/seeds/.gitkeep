@@ -1,0 +1,6 @@
+/**
+ * Database artifacts for TypeORM.
+ * - migrations/ — one file per schema change (implementation-plan §8.2)
+ * - seeds/ — added per domain (e.g. default-categories in Phase 0 categories module)
+ */
+export {};

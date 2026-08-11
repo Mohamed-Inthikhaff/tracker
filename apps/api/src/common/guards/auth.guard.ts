@@ -15,8 +15,8 @@ import type {
 interface AccessTokenPayload {
   sub: string;
   email?: string;
-  activeHouseholdId: string;
-  householdIds: string[];
+  activeHouseholdId?: string;
+  householdIds?: string[];
 }
 
 /**
@@ -60,31 +60,34 @@ export class AuthGuard implements CanActivate {
       const payload = jwt.verify(token, secret) as AccessTokenPayload;
       request.user = toClaims(payload);
       return true;
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        throw err;
+      }
       throw new UnauthorizedException("Invalid or expired token");
     }
   }
 }
 
 function toClaims(payload: AccessTokenPayload): JwtUserClaims {
-  if (!payload.sub || !payload.activeHouseholdId) {
+  if (!payload.sub) {
     throw new UnauthorizedException("Token missing required claims");
   }
   const householdIds = Array.isArray(payload.householdIds)
     ? payload.householdIds
     : [];
-  if (
-    householdIds.length === 0 ||
-    !householdIds.includes(payload.activeHouseholdId)
-  ) {
+  const activeHouseholdId = payload.activeHouseholdId?.trim() || undefined;
+
+  if (activeHouseholdId && !householdIds.includes(activeHouseholdId)) {
     throw new UnauthorizedException(
       "Token household claims are invalid or incomplete"
     );
   }
+
   return {
     userId: payload.sub,
     email: payload.email,
-    activeHouseholdId: payload.activeHouseholdId,
+    activeHouseholdId,
     householdIds,
   };
 }

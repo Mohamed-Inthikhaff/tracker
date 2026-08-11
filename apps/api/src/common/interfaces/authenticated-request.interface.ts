@@ -7,8 +7,11 @@ export interface JwtUserClaims {
   /** Authenticated user id (JWT `sub`). */
   userId: string;
   email?: string;
-  /** Claim from token: last-known / default active household. */
-  activeHouseholdId: string;
+  /**
+   * Claim from token: last-known / default active household.
+   * Empty for first-time users before FR-AUTH-002 bootstrap.
+   */
+  activeHouseholdId?: string;
   /** All households the user may access (membership set). */
   householdIds: string[];
 }
