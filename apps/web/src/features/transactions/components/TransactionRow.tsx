@@ -1,3 +1,5 @@
+import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "@expense-tracker/ui/button";
 import { TxnTypeRail, txnTypeToken } from "@expense-tracker/ui/txn-type-rail";
 import type { Transaction, TransactionType } from "../types/transaction.types";
 
@@ -9,7 +11,23 @@ const TYPE_LABEL: Record<TransactionType, string> = {
   DebtReceived: "Debt received",
 };
 
-export function TransactionRow({ transaction }: { transaction: Transaction }) {
+export function TransactionRow({
+  transaction,
+  confirmDelete,
+  deleting,
+  onEdit,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
+}: {
+  transaction: Transaction;
+  confirmDelete: boolean;
+  deleting: boolean;
+  onEdit: () => void;
+  onAskDelete: () => void;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+}) {
   const tone = txnTypeToken(transaction.type);
   return (
     <tr className="border-b border-[var(--border-default)] last:border-b-0">
@@ -33,6 +51,53 @@ export function TransactionRow({ transaction }: { transaction: Transaction }) {
       </td>
       <td className="px-3 py-1.5 text-xs text-[var(--text-secondary)]">
         {transaction.source}
+      </td>
+      <td className="px-2 py-1.5 text-right">
+        {confirmDelete ? (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              loading={deleting}
+              onClick={onConfirmDelete}
+            >
+              Confirm
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={deleting}
+              onClick={onCancelDelete}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 px-0 text-[var(--text-secondary)]"
+              aria-label="Edit transaction"
+              onClick={onEdit}
+            >
+              <Pencil width={14} height={14} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 px-0 text-[var(--text-secondary)]"
+              aria-label="Delete transaction"
+              onClick={onAskDelete}
+            >
+              <Trash2 width={14} height={14} />
+            </Button>
+          </div>
+        )}
       </td>
     </tr>
   );

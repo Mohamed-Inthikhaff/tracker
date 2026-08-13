@@ -5,6 +5,7 @@ import type {
   Transaction,
   TransactionListParams,
   TransactionListResult,
+  UpdateTransactionInput,
 } from "../types/transaction.types";
 
 export const transactionsApi = {
@@ -31,4 +32,15 @@ export const transactionsApi = {
 
   create: (input: CreateTransactionInput) =>
     apiClient.post<Transaction>("/transactions", input),
+
+  update: (id: string, input: UpdateTransactionInput) =>
+    apiClient.patch<Transaction>(`/transactions/${id}`, {
+      ...input,
+      date:
+        input.date instanceof Date
+          ? input.date.toISOString()
+          : input.date,
+    }),
+
+  delete: (id: string) => apiClient.delete<void>(`/transactions/${id}`),
 };

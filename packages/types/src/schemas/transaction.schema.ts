@@ -27,10 +27,10 @@ export const moneyAmountSchema = z
   .refine((v) => Number(v) > 0, "amount must be greater than zero");
 
 /**
- * Phase 1: categoryId optional — when omitted and description is present,
- * classification.service suggests a category (FR-CAT-003).
+ * Shared editable fields — create extends with source; update is a partial
+ * of the FR-TXN-003 subset (date/type/category/amount/description/payee).
  */
-export const createTransactionSchema = z.object({
+export const transactionWritableFieldsSchema = z.object({
   date: z.coerce.date(),
   type: transactionTypeSchema,
   categoryId: z.string().uuid().nullable().optional(),
@@ -38,9 +38,33 @@ export const createTransactionSchema = z.object({
   description: z.string().max(280).optional(),
   payee: z.string().max(120).optional(),
   notes: z.string().max(1000).optional(),
+});
+
+/**
+ * Phase 1: categoryId optional — when omitted and description is present,
+ * classification.service suggests a category (FR-CAT-003).
+ */
+export const createTransactionSchema = transactionWritableFieldsSchema.extend({
   source: transactionSourceSchema.default("manual"),
 });
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+
+/** FR-TXN-003 — patch body; at least one field required. Source is immutable. */
+export const updateTransactionSchema = transactionWritableFieldsSchema
+  .pick({
+    date: true,
+    type: true,
+    categoryId: true,
+    amount: true,
+    description: true,
+    payee: true,
+  })
+  .partial()
+  .refine(
+    (body) => Object.values(body).some((v) => v !== undefined),
+    { message: "At least one field is required" }
+  );
+export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 
 export const queryTransactionsSchema = z.object({
   dateFrom: z.coerce.date().optional(),

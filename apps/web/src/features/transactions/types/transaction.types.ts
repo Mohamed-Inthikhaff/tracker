@@ -1,4 +1,7 @@
-import type { createTransactionSchema } from "@expense-tracker/types";
+import type {
+  createTransactionSchema,
+  updateTransactionSchema,
+} from "@expense-tracker/types";
 import type { z } from "zod";
 
 export type TransactionType =
@@ -34,6 +37,7 @@ export interface TransactionListResult {
 }
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 
 export interface TransactionListParams {
   dateFrom?: string;

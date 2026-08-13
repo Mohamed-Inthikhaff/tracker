@@ -8,6 +8,7 @@ import type {
   MonthlySummaryQuery,
   QueryTransactionsInput,
   TransactionType,
+  UpdateTransactionInput,
 } from "@expense-tracker/types";
 import { CategoriesService } from "../categories/categories.service";
 import { ClassificationService } from "../classification/classification.service";
@@ -18,6 +19,7 @@ import type {
   MonthlyTotalsSummary,
   TransactionListResult,
   TransactionView,
+  UpdateTransactionData,
 } from "./interfaces/transaction.interface";
 import { Transaction } from "./entities/transaction.entity";
 
@@ -117,6 +119,78 @@ export class TransactionsService {
       throw new NotFoundException("Transaction not found");
     }
     return toView(txn);
+  }
+
+  /**
+   * FR-TXN-003 — partial update. Household scoping is findById(householdId, id);
+   * cross-household ids 404 rather than leaking existence.
+   */
+  async update(
+    householdId: string,
+    id: string,
+    input: UpdateTransactionInput
+  ): Promise<TransactionView> {
+    const txn = await this.repo.findById(householdId, id);
+    if (!txn) {
+      throw new NotFoundException("Transaction not found");
+    }
+
+    const nextType = input.type ?? txn.type;
+    const nextCategoryId =
+      input.categoryId !== undefined
+        ? input.categoryId
+        : txn.categoryId;
+
+    if (nextCategoryId === null || nextCategoryId === undefined) {
+      throw new BadRequestException("categoryId is required");
+    }
+
+    if (input.type !== undefined || input.categoryId !== undefined) {
+      const category = await this.categories.getById(
+        householdId,
+        nextCategoryId
+      );
+      if (!category.isActive) {
+        throw new BadRequestException("Category is inactive");
+      }
+      if (category.type !== nextType) {
+        throw new BadRequestException(
+          `Category type ${category.type} does not match transaction type ${nextType}`
+        );
+      }
+    }
+
+    const patch: UpdateTransactionData = {};
+    if (input.date !== undefined) patch.txnDate = toDateOnly(input.date);
+    if (input.type !== undefined) patch.type = input.type;
+    if (input.categoryId !== undefined) {
+      patch.categoryId = nextCategoryId;
+      patch.userConfirmedCategory = true;
+    }
+    if (input.amount !== undefined) {
+      patch.amount = normalizeAmount(input.amount);
+    }
+    if (input.description !== undefined) {
+      patch.description = input.description.trim() || null;
+    }
+    if (input.payee !== undefined) {
+      patch.payee = input.payee.trim() || null;
+    }
+
+    const updated = await this.repo.updateOne(txn, patch);
+    return toView(updated);
+  }
+
+  /**
+   * FR-TXN-003 — hard delete.
+   * FR-DEBT-002: repaid totals are SUM()'d live from transactions on debt
+   * read — no stored link row — so delete needs no debt-table cleanup.
+   */
+  async delete(householdId: string, id: string): Promise<void> {
+    const deleted = await this.repo.deleteById(householdId, id);
+    if (!deleted) {
+      throw new NotFoundException("Transaction not found");
+    }
   }
 
   async list(

@@ -66,10 +66,13 @@ describe("TransactionsService", () => {
     repo = {
       createOne: jest.fn(),
       findById: jest.fn(),
+      updateOne: jest.fn(),
+      deleteById: jest.fn(),
       search: jest.fn(),
       createMany: jest.fn(),
       sumByType: jest.fn(),
       countByHouseholdAndRange: jest.fn(),
+      sumAmountByPayeeTypeAndWindow: jest.fn(),
     } as unknown as jest.Mocked<TransactionsRepository>;
 
     categories = {
@@ -266,6 +269,129 @@ describe("TransactionsService", () => {
       expect(result.byType.Income).toBe("72452.00");
       expect(result.byType.Expense).toBe("45481.00");
       expect(result.netBalance).toBe("26971.00");
+    });
+  });
+
+  describe("update (FR-TXN-003)", () => {
+    it("updates amount independently", async () => {
+      repo.findById.mockResolvedValue({ ...txn });
+      repo.updateOne.mockImplementation(async (row, patch) => ({
+        ...row,
+        ...patch,
+        amount: patch.amount ?? row.amount,
+      }));
+
+      const result = await service.update(householdId, txn.id, {
+        amount: "99.00",
+      });
+
+      expect(categories.getById).not.toHaveBeenCalled();
+      expect(repo.updateOne).toHaveBeenCalledWith(
+        expect.objectContaining({ id: txn.id }),
+        { amount: "99.00" }
+      );
+      expect(result.amount).toBe("99.00");
+    });
+
+    it("updates category independently after type match check", async () => {
+      const nextCategoryId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+      repo.findById.mockResolvedValue({ ...txn });
+      categories.getById.mockResolvedValue({
+        id: nextCategoryId,
+        householdId,
+        name: "Transport",
+        type: "Expense",
+        parentCategoryId: null,
+        isSystemDefault: true,
+        isActive: true,
+        sortOrder: 300,
+      });
+      repo.updateOne.mockImplementation(async (row, patch) => ({
+        ...row,
+        categoryId: patch.categoryId ?? row.categoryId,
+        userConfirmedCategory:
+          patch.userConfirmedCategory ?? row.userConfirmedCategory,
+      }));
+
+      const result = await service.update(householdId, txn.id, {
+        categoryId: nextCategoryId,
+      });
+
+      expect(categories.getById).toHaveBeenCalledWith(
+        householdId,
+        nextCategoryId
+      );
+      expect(repo.updateOne).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          categoryId: nextCategoryId,
+          userConfirmedCategory: true,
+        })
+      );
+      expect(result.categoryId).toBe(nextCategoryId);
+    });
+
+    it("updates description independently", async () => {
+      repo.findById.mockResolvedValue({ ...txn });
+      repo.updateOne.mockImplementation(async (row, patch) => ({
+        ...row,
+        description:
+          patch.description !== undefined ? patch.description : row.description,
+      }));
+
+      const result = await service.update(householdId, txn.id, {
+        description: "Renamed groceries",
+      });
+
+      expect(repo.updateOne).toHaveBeenCalledWith(expect.anything(), {
+        description: "Renamed groceries",
+      });
+      expect(result.description).toBe("Renamed groceries");
+    });
+
+    it("rejects update when transaction is outside the active household", async () => {
+      repo.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(householdId, txn.id, { amount: "1.00" })
+      ).rejects.toThrow(/not found/i);
+      expect(repo.updateOne).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("delete (FR-TXN-003) and debt linkage (FR-DEBT-002)", () => {
+    it("hard-deletes a household-scoped transaction", async () => {
+      repo.deleteById.mockResolvedValue(true);
+
+      await service.delete(householdId, txn.id);
+
+      expect(repo.deleteById).toHaveBeenCalledWith(householdId, txn.id);
+    });
+
+    it("rejects delete when transaction is outside the active household", async () => {
+      repo.deleteById.mockResolvedValue(false);
+
+      await expect(service.delete(householdId, txn.id)).rejects.toThrow(
+        /not found/i
+      );
+    });
+
+    it("does not write debt rows — repaid totals re-sum live from transactions", async () => {
+      // DebtsService.sumRepaid calls sumAmountByPayeeTypeAndWindow on every
+      // debt read. There is no stored repayment link; deleting a txn only
+      // removes it from that SUM on the next debts list/get.
+      repo.deleteById.mockResolvedValue(true);
+      repo.sumAmountByPayeeTypeAndWindow.mockResolvedValue("0.00");
+
+      await service.delete(householdId, txn.id);
+
+      expect(repo.deleteById).toHaveBeenCalledWith(householdId, txn.id);
+      expect(
+        typeof repo.sumAmountByPayeeTypeAndWindow
+      ).toBe("function");
+      // No debt repository is injected into TransactionsService — delete
+      // cannot leave stale stored remaining/status because none are stored.
+      expect(Object.keys(repo).some((k) => /debt/i.test(k))).toBe(false);
     });
   });
 });

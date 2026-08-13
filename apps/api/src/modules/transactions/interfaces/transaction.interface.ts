@@ -63,6 +63,17 @@ export interface CreateTransactionData {
   userConfirmedCategory: boolean;
 }
 
+/** Partial patch applied by repository.updateOne (FR-TXN-003). */
+export interface UpdateTransactionData {
+  txnDate?: string;
+  type?: TransactionType;
+  categoryId?: string;
+  amount?: string;
+  description?: string | null;
+  payee?: string | null;
+  userConfirmedCategory?: boolean;
+}
+
 export interface TransactionSearchFilters {
   householdId: string;
   dateFrom?: Date;

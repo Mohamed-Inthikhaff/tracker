@@ -6,6 +6,7 @@ import { Transaction } from "./entities/transaction.entity";
 import type {
   CreateTransactionData,
   TransactionSearchFilters,
+  UpdateTransactionData,
 } from "./interfaces/transaction.interface";
 
 /**
@@ -33,6 +34,28 @@ export class TransactionsRepository {
     id: string
   ): Promise<Transaction | null> {
     return this.repo.findOne({ where: { id, householdId } });
+  }
+
+  async updateOne(
+    txn: Transaction,
+    data: UpdateTransactionData
+  ): Promise<Transaction> {
+    if (data.txnDate !== undefined) txn.txnDate = data.txnDate;
+    if (data.type !== undefined) txn.type = data.type;
+    if (data.categoryId !== undefined) txn.categoryId = data.categoryId;
+    if (data.amount !== undefined) txn.amount = data.amount;
+    if (data.description !== undefined) txn.description = data.description;
+    if (data.payee !== undefined) txn.payee = data.payee;
+    if (data.userConfirmedCategory !== undefined) {
+      txn.userConfirmedCategory = data.userConfirmedCategory;
+    }
+    return this.repo.save(txn);
+  }
+
+  /** Hard delete — debt repaid totals re-sum live on next debt read (FR-DEBT-002). */
+  async deleteById(householdId: string, id: string): Promise<boolean> {
+    const result = await this.repo.delete({ id, householdId });
+    return (result.affected ?? 0) > 0;
   }
 
   async search(
