@@ -17,6 +17,13 @@ export type ImportField = z.infer<typeof importFieldSchema>;
 export const columnMappingSchema = z.record(z.string(), importFieldSchema);
 export type ColumnMapping = z.infer<typeof columnMappingSchema>;
 
+/**
+ * Confirmed CSV date layout (FR-IMP-001). Never infer per-row —
+ * preview/commit parse every date with this format only.
+ */
+export const importDateFormatSchema = z.enum(["iso", "dmy", "mdy"]);
+export type ImportDateFormat = z.infer<typeof importDateFormatSchema>;
+
 /** One-time remaps for unrecognized category labels (FR-IMP-002). */
 export const categoryRemapSchema = z.object({
   sourceName: z.string().min(1).max(120),
@@ -31,12 +38,14 @@ export type CategoryRemap = z.infer<typeof categoryRemapSchema>;
 
 export const previewImportSchema = z.object({
   mapping: columnMappingSchema,
+  dateFormat: importDateFormatSchema,
   categoryRemaps: z.array(categoryRemapSchema).default([]),
 });
 export type PreviewImportInput = z.infer<typeof previewImportSchema>;
 
 export const commitImportSchema = z.object({
   mapping: columnMappingSchema,
+  dateFormat: importDateFormatSchema,
   categoryRemaps: z.array(categoryRemapSchema).default([]),
 });
 export type CommitImportInput = z.infer<typeof commitImportSchema>;

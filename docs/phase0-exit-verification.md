@@ -11,7 +11,7 @@ Source workbook: `Expense_Tracker_Automation Last.xlsx` (337 Transactions rows).
 
 1. API + Postgres running (`TYPEORM_SYNC=true` or migrations applied).
 2. Web app at `http://localhost:3000`.
-3. Signed JWT (`JWT_SECRET`) and login/bootstrap complete.
+3. Signed in via **Auth0** (bootstrap complete). For curl-only checks, set `ALLOW_DEV_JWT=true` and pass a hand-signed HS256 JWT (`JWT_SECRET`) plus `X-Household-Id`.
 4. Export the **Transactions** sheet as CSV (headers: `Date,Day,Type,Category,Person/Payee,Description,Amount (Rs),Notes`).
 
 ---
@@ -19,7 +19,7 @@ Source workbook: `Expense_Tracker_Automation Last.xlsx` (337 Transactions rows).
 ## 1. Import
 
 1. Open **Import** (`/transactions/import`).
-2. Upload the CSV → accept suggested column mapping → **Preview**.
+2. Upload the CSV → accept suggested column mapping → **confirm date format** (ISO / DD/MM/YYYY / MM/DD/YYYY) → **Preview**.
 3. For every **unmapped category**, click **Create category** (or map to an existing id), then **Re-run preview**.
 4. When `canCommit` is true and `readyCount` ≈ **336** (one blank-date row should fail), **Commit**.
 
@@ -29,7 +29,8 @@ Source workbook: `Expense_Tracker_Automation Last.xlsx` (337 Transactions rows).
 |-------|---------|-----|
 | Blank `Date` row (Clothing · Tailor 700) | 1 failed parse row | Expected — Dashboard used dated rows only |
 | Labels like `Daily Routine/Misc`, `Food & Snacks` | unmapped categories | Create category or remap once |
-| Excel serial dates | usually auto-parsed | If wrong year/month, mapping bug → check `normalizeDate` |
+| Excel serial dates | usually auto-parsed | If wrong year/month, confirm date format on the map step; `normalizeDate` uses that format only |
+| Live sheet grew after fixture | August (or later) totals differ by new rows | Expected — fixture is a frozen snapshot (see §6). Do not “fix” the importer. |
 
 ---
 
@@ -113,3 +114,11 @@ Signed off **2026-08-13** against `Expense_Tracker_Automation Last.xlsx` via `GE
 - [x] No float noise (compare as fixed 2-decimal strings)
 
 When this passes, Phase 0 exit criterion is met → start Phase 1 (classification, debts, budgets, billing).
+
+---
+
+## 6. Fixture vs live spreadsheet
+
+[`fixtures/phase0-dashboard-expected.json`](./fixtures/phase0-dashboard-expected.json) is a **frozen snapshot** from the first Phase 0 sign-off (336 dated rows). The live Google Sheet has kept moving since (e.g. `2026-08-13` Expense Food & Snacks “Chicken + Egg” Rs 1,200). August in the running app can therefore show a small, known delta versus the fixture without meaning the importer is wrong.
+
+Do **not** keep re-syncing the fixture to the live sheet. Trust the app going forward; the fixture already proved parser + aggregation once.

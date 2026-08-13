@@ -44,7 +44,7 @@ expense-tracker/
 | Concern | Choice | Why |
 |---|---|---|
 | Component foundation | **shadcn/ui** (Radix UI primitives + Tailwind CSS) | The current default for new Tailwind/Next.js projects: components are copied into your repo (not an npm dependency), so you own and can restyle every pixel with no version-lock risk. Built on Radix, so accessibility (keyboard nav, focus management, ARIA) is correct out of the box. |
-| Dashboard charts & KPI cards | **Tremor** | Purpose-built for exactly this app's Dashboard/Budget screens — KPI cards, area/bar/donut charts, progress bars, sparklines. Fully shadcn-compatible (same Tailwind theming), so it doesn't feel like a bolted-on second design language. |
+| Dashboard charts & KPI cards | **Token-based custom charts + `KpiCard`** | Tremor (`@tremor/react@3.18.7`) peer-depends on `react@^18.0.0` only; this monorepo runs **React 19** (`apps/web` / `apps/capture`: `"react": "^19.0.0"`), so Tremor was not installed. KPIs use `packages/ui` `KpiCard` (label / value / optional hint; `tone` from `var(--type-*)`). Category breakdown and 12-month income vs expense trend are hand-rolled HTML/CSS bar charts in `DashboardHome` (div width/height percentages, colors from `packages/ui/src/theme/tokens.css`). No Recharts. |
 | Data tables (transaction list, admin) | **TanStack Table** | Headless, so it renders through your own shadcn-styled `<table>` — sorting, filtering, pagination, virtualization for large transaction lists, without fighting a pre-styled grid. |
 | Server state / data fetching | **TanStack Query** | Handles caching, refetch-on-focus, optimistic updates (critical for the two-tap quick-add flow feeling instant), and background refresh for the real-time dashboard requirement. |
 | Forms | **React Hook Form** + **Zod** | React Hook Form for performant, minimally-re-rendering forms; Zod for schema validation shared between frontend form validation and backend DTO validation (one schema, two consumers — see Section 7). |
@@ -263,6 +263,7 @@ This same five/six-file pattern is applied identically to every other module (`h
 
 ### 5.2 Cross-cutting concerns
 
+- **Auth** is Auth0 (FR-AUTH-001): `apps/web` and `apps/capture` sign in via the Regular Web App; the API verifies RS256 access tokens against the Auth0 JWKS. HS256 `JWT_SECRET` is a **dev-only** fallback (`ALLOW_DEV_JWT=true`) for curl/scripts — not a product login path.
 - **`HouseholdScopeGuard`** runs on every request, resolving the authenticated user's active household from the JWT and attaching it to the request context (`common/decorators/current-household.decorator.ts` then lets any controller pull it with `@CurrentHousehold() householdId: string`). This is what makes SRS requirement FR-AUTH-007 (no cross-household leakage) structurally enforced rather than something each controller has to remember to check.
 - **`ZodValidationPipe`** replaces `class-validator` globally — this is what lets a Zod schema be shared verbatim between the NestJS DTO and the React Hook Form on the frontend (Section 7).
 
@@ -415,7 +416,7 @@ packages/ui/src/
 ├── card.tsx
 ├── amount-input.tsx
 ├── badge.tsx                    # used for budget-health / debt-status indicators
-├── kpi-card.tsx                 # Tremor-based, used across Dashboard
+├── kpi-card.tsx                 # hand-rolled KPI tile (label/value/hint, token tones); Dashboard / Budgets / Debts
 └── data-table.tsx               # TanStack Table wrapper, styled with shadcn primitives
 ```
 
@@ -510,7 +511,7 @@ Each phase lists: goal, new DB migrations, new/changed backend modules, new fron
 |---|---|
 | DB migrations | `households`, `users`, `household_members`, `categories`, `transactions` (core tables only) |
 | Backend modules | `auth/`, `households/`, `categories/`, `transactions/` (Create/Read only), `imports/` (CSV) |
-| Frontend features | Login/invite flow, household switcher, transaction list, CSV import wizard |
+| Frontend features | Auth0 login/invite flow, household switcher, transaction list, CSV import wizard |
 | Libraries introduced | shadcn/ui base set, TanStack Query, TanStack Table, React Hook Form + Zod |
 | Exit criteria | Your own 337-row sheet imports via `imports/` and the resulting transaction list totals match the spreadsheet's Dashboard sheet exactly (SRS Section 6.3 acceptance fixture) |
 

@@ -3,6 +3,7 @@ import type {
   CategoryRemap,
   ColumnMapping,
   CommitImportResult,
+  ImportDateFormat,
   PreviewImportResult,
   UploadImportResult,
 } from "../types/import.types";
@@ -23,11 +24,19 @@ export const importsApi = {
 
   preview: (
     id: string,
-    body: { mapping: ColumnMapping; categoryRemaps?: CategoryRemap[] }
+    body: {
+      mapping: ColumnMapping;
+      dateFormat: ImportDateFormat;
+      categoryRemaps?: CategoryRemap[];
+    }
   ) => apiClient.post<PreviewImportResult>(`/imports/${id}/preview`, body),
 
   commit: (
     id: string,
-    body: { mapping: ColumnMapping; categoryRemaps?: CategoryRemap[] }
+    body: {
+      mapping: ColumnMapping;
+      dateFormat: ImportDateFormat;
+      categoryRemaps?: CategoryRemap[];
+    }
   ) => apiClient.post<CommitImportResult>(`/imports/${id}/commit`, body),
 };

@@ -3,11 +3,8 @@ import {
   rowsToRecords,
   suggestColumnMapping,
 } from "./import-csv.parser";
-import {
-  buildImportPreview,
-  normalizeAmount,
-  normalizeDate,
-} from "./import-preview.builder";
+import { collectDateSamples, normalizeDate, suggestDateFormat } from "./import-date";
+import { buildImportPreview, normalizeAmount } from "./import-preview.builder";
 import { ImportsService } from "./imports.service";
 import type { ImportsRepository } from "./imports.repository";
 import type { CategoriesService } from "../categories/categories.service";
@@ -63,7 +60,8 @@ describe("import-preview.builder", () => {
           isActive: true,
         },
       ],
-      []
+      [],
+      "iso"
     );
 
     expect(preview.unmappedCategories.some((u) => u.sourceName === "Daily Routine/Misc")).toBe(
@@ -107,7 +105,8 @@ describe("import-preview.builder", () => {
           type: "Expense",
           targetCategoryId: "cat-misc",
         },
-      ]
+      ],
+      "iso"
     );
 
     expect(preview.unmappedCategories).toHaveLength(0);
@@ -116,9 +115,120 @@ describe("import-preview.builder", () => {
   });
 
   it("normalizes excel serial dates and money strings", () => {
-    expect(normalizeDate("46023")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(normalizeDate("46023", "iso")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(normalizeAmount("1,600")).toBe("1600.00");
     expect(normalizeAmount("42.5")).toBe("42.50");
+  });
+
+  it("parses the same dates identically from ISO, DMY, and MDY when format is confirmed", () => {
+    const cats = [
+      { id: "cat-food", name: "Food", type: "Expense" as const, isActive: true },
+    ];
+    const mapping = {
+      Date: "date",
+      Type: "type",
+      Category: "category",
+      "Amount (Rs)": "amount",
+    } as const;
+    const expected = ["2026-08-01", "2026-01-13", "2026-12-08"];
+
+    const isoCsv = `Date,Type,Category,Amount (Rs)
+2026-08-01,Expense,Food,100
+2026-01-13,Expense,Food,50
+2026-12-08,Expense,Food,25`;
+    const dmyCsv = `Date,Type,Category,Amount (Rs)
+01/08/2026,Expense,Food,100
+13/01/2026,Expense,Food,50
+08/12/2026,Expense,Food,25`;
+    const mdyCsv = `Date,Type,Category,Amount (Rs)
+08/01/2026,Expense,Food,100
+01/13/2026,Expense,Food,50
+12/08/2026,Expense,Food,25`;
+
+    const iso = parseCsv(isoCsv);
+    const dmy = parseCsv(dmyCsv);
+    const mdy = parseCsv(mdyCsv);
+
+    const isoPreview = buildImportPreview(
+      rowsToRecords(iso.headers, iso.rows),
+      mapping,
+      cats,
+      [],
+      "iso"
+    );
+    const dmyPreview = buildImportPreview(
+      rowsToRecords(dmy.headers, dmy.rows),
+      mapping,
+      cats,
+      [],
+      "dmy"
+    );
+    const mdyPreview = buildImportPreview(
+      rowsToRecords(mdy.headers, mdy.rows),
+      mapping,
+      cats,
+      [],
+      "mdy"
+    );
+
+    expect(isoPreview.failedCount).toBe(0);
+    expect(dmyPreview.failedCount).toBe(0);
+    expect(mdyPreview.failedCount).toBe(0);
+    expect(isoPreview.ready.map((r) => r.date)).toEqual(expected);
+    expect(dmyPreview.ready.map((r) => r.date)).toEqual(expected);
+    expect(mdyPreview.ready.map((r) => r.date)).toEqual(expected);
+  });
+
+  it("fails rows that are invalid under the confirmed date format (FR-IMP-003)", () => {
+    const cats = [
+      { id: "cat-food", name: "Food", type: "Expense" as const, isActive: true },
+    ];
+    const mapping = {
+      Date: "date",
+      Type: "type",
+      Category: "category",
+      "Amount (Rs)": "amount",
+    } as const;
+    const csv = `Date,Type,Category,Amount (Rs)
+13/08/2026,Expense,Food,100
+02/30/2026,Expense,Food,50`;
+    const { headers, rows } = parseCsv(csv);
+    const preview = buildImportPreview(
+      rowsToRecords(headers, rows),
+      mapping,
+      cats,
+      [],
+      "mdy"
+    );
+
+    expect(preview.readyCount).toBe(0);
+    expect(preview.failedCount).toBe(2);
+    expect(preview.failed[0].reason).toMatch(/Invalid date "13\/08\/2026"/);
+    expect(preview.failed[1].reason).toMatch(/Invalid date "02\/30\/2026"/);
+  });
+});
+
+describe("import-date", () => {
+  it("suggests ISO, DMY, or MDY only when the sample is unambiguous", () => {
+    expect(suggestDateFormat(["2026-08-01", "2026-08-13"])).toBe("iso");
+    expect(suggestDateFormat(["13/01/2026", "14/02/2026"])).toBe("dmy");
+    expect(suggestDateFormat(["01/13/2026", "02/14/2026"])).toBe("mdy");
+    expect(suggestDateFormat(["01/02/2026", "03/04/2026"])).toBeNull();
+    expect(suggestDateFormat(["2026-01-01", "01/02/2026"])).toBeNull();
+    expect(suggestDateFormat(["13/01/2026", "01/13/2026"])).toBeNull();
+  });
+
+  it("collects unique date samples from the mapped date column", () => {
+    const records = [
+      { Date: "08/01/2026", Type: "Expense" },
+      { Date: "08/01/2026", Type: "Income" },
+      { Date: "08/13/2026", Type: "Expense" },
+    ];
+    expect(collectDateSamples(records, { Date: "date", Type: "type" })).toEqual([
+      "08/01/2026",
+      "08/13/2026",
+    ]);
+    expect(suggestDateFormat(["08/01/2026", "08/13/2026"])).toBe("mdy");
   });
 });
 
@@ -244,6 +354,7 @@ describe("ImportsService", () => {
     const mapping = suggestColumnMapping(headers) as never;
     const result = await service.commit(householdId, auth0Sub, batch.id, {
       mapping,
+      dateFormat: "iso",
       categoryRemaps: [
         {
           sourceName: "Daily Routine/Misc",

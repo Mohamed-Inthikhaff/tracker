@@ -20,6 +20,7 @@
     "@nestjs/platform-express": "^11.0.12",
     "@nestjs/typeorm": "^11.0.3",
     "jsonwebtoken": "^9.0.3",
+    "jwks-rsa": "^4.1.0",
     "multer": "^2.2.0",
     "nestjs-zod": "^5.5.0",
     "pg": "^8.23.0",

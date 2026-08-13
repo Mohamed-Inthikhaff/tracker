@@ -110,7 +110,8 @@ export class HouseholdsService {
   }
 
   async listMyHouseholds(auth0Sub: string): Promise<HouseholdSummary[]> {
-    const user = await requireUserByAuth0Sub(this.repo, auth0Sub);
+    const user = await this.repo.findUserByAuth0Sub(auth0Sub);
+    if (!user) return [];
     const memberships = await this.repo.findActiveMembershipsForUser(user.id);
     return memberships
       .filter((m) => m.household && !m.household.deletedAt)

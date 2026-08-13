@@ -5,24 +5,19 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import * as jwt from "jsonwebtoken";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import type {
   AuthenticatedRequest,
   JwtUserClaims,
 } from "../interfaces/authenticated-request.interface";
-
-interface AccessTokenPayload {
-  sub: string;
-  email?: string;
-  activeHouseholdId?: string;
-  householdIds?: string[];
-}
+import {
+  type AccessTokenPayload,
+  verifyAccessToken,
+} from "./verify-access-token";
 
 /**
  * Verifies Bearer JWT and attaches `request.user`.
- * Real identity provider (Auth0) wiring lands in the auth module;
- * this guard only enforces the token contract every route relies on.
+ * Auth0 RS256 via JWKS; HS256 `JWT_SECRET` only when `ALLOW_DEV_JWT=true`.
  *
  * JWT `householdIds` / `activeHouseholdId` are frontend convenience hints.
  * Access control is HouseholdScopeGuard + `household_members` (FR-AUTH-007).
@@ -31,7 +26,7 @@ interface AccessTokenPayload {
 export class AuthGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -52,15 +47,8 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException("Missing bearer token");
     }
 
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new UnauthorizedException(
-        "JWT_SECRET is not configured — cannot verify tokens"
-      );
-    }
-
     try {
-      const payload = jwt.verify(token, secret) as AccessTokenPayload;
+      const payload = await verifyAccessToken(token);
       request.user = toClaims(payload);
       return true;
     } catch (err) {

@@ -23,6 +23,7 @@ export default function CaptureHomePage() {
             onClick={() => {
               clearAuth(null);
               clearHh(null);
+              window.location.assign("/api/auth/logout?returnTo=/");
             }}
           >
             Switch account

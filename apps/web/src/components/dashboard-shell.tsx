@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@expense-tracker/ui/button";
 import { HouseholdSwitcher } from "@/features/households/components/HouseholdSwitcher";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useHouseholdStore } from "@/stores/use-household-store";
 import { cn } from "@expense-tracker/ui/cn";
@@ -24,10 +25,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
   const clearHousehold = useHouseholdStore((s) => s.clear);
+  const { user: auth0User, isLoading: auth0Loading } = useUser();
 
   useEffect(() => {
-    if (!token) router.replace("/login");
-  }, [token, router]);
+    if (auth0Loading) return;
+    if (!token && !auth0User) router.replace("/login");
+  }, [auth0Loading, token, auth0User, router]);
+
+  if (auth0Loading || (!token && auth0User)) {
+    return (
+      <div className="min-h-screen grid place-items-center text-sm text-[var(--text-secondary)]">
+        Signing in…
+      </div>
+    );
+  }
 
   if (!token) {
     return (
@@ -80,7 +91,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               onClick={() => {
                 clearSession();
                 clearHousehold();
-                router.replace("/login");
+                window.location.assign("/api/auth/logout?returnTo=/login");
               }}
             >
               Sign out

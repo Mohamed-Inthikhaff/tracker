@@ -1,8 +1,10 @@
 import type {
   CategoryRemap,
   ColumnMapping,
+  ImportDateFormat,
   TransactionType,
 } from "@expense-tracker/types";
+import { IMPORT_DATE_FORMAT_LABEL, normalizeDate } from "./import-date";
 
 export interface ParsedImportRow {
   rowNumber: number;
@@ -52,7 +54,8 @@ export function buildImportPreview(
   records: Array<Record<string, string>>,
   mapping: ColumnMapping,
   categories: CategoryLookup[],
-  remaps: CategoryRemap[]
+  remaps: CategoryRemap[],
+  dateFormat: ImportDateFormat
 ): ImportPreviewResult {
   assertRequiredFields(mapping);
 
@@ -91,11 +94,11 @@ export function buildImportPreview(
       return;
     }
 
-    const date = normalizeDate(extracted.date);
+    const date = normalizeDate(extracted.date, dateFormat);
     if (!date) {
       failed.push({
         rowNumber,
-        reason: `Invalid date "${extracted.date}"`,
+        reason: `Invalid date "${extracted.date}" for ${IMPORT_DATE_FORMAT_LABEL[dateFormat]}`,
         raw,
       });
       return;
@@ -267,40 +270,6 @@ function normalizeType(raw: string): TransactionType | null {
     return t;
   }
   return aliases[t.toLowerCase()] ?? null;
-}
-
-/** Accept ISO, common d/m/y, and Excel serial day numbers. */
-export function normalizeDate(raw: string): string | null {
-  const s = raw.trim();
-  if (!s) return null;
-
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    return s.slice(0, 10);
-  }
-
-  // Excel serial (e.g. 46023)
-  if (/^\d{5}(\.\d+)?$/.test(s)) {
-    const serial = Math.floor(Number(s));
-    const excelEpoch = Date.UTC(1899, 11, 30);
-    const ms = excelEpoch + serial * 24 * 60 * 60 * 1000;
-    return new Date(ms).toISOString().slice(0, 10);
-  }
-
-  const dmy = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
-  if (dmy) {
-    const day = Number(dmy[1]);
-    const month = Number(dmy[2]);
-    const year = Number(dmy[3]);
-    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
-  }
-
-  const parsed = Date.parse(s);
-  if (!Number.isNaN(parsed)) {
-    return new Date(parsed).toISOString().slice(0, 10);
-  }
-  return null;
 }
 
 export function normalizeAmount(raw: string): string | null {

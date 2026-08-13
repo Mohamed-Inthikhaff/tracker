@@ -7,7 +7,7 @@ scoping, validation, or error shaping inside controllers or services.
 
 | Piece | File | Role |
 |-------|------|------|
-| **AuthGuard** | `guards/auth.guard.ts` | Reads `Authorization: Bearer <jwt>`, verifies the token with `JWT_SECRET`, and attaches `request.user` (`userId`, `activeHouseholdId`, `householdIds`). |
+| **AuthGuard** | `guards/auth.guard.ts` | Reads `Authorization: Bearer <jwt>`, verifies Auth0 RS256 via JWKS (or HS256 `JWT_SECRET` only when `ALLOW_DEV_JWT=true`), and attaches `request.user` (`userId`, `activeHouseholdId`, `householdIds`). |
 | **HouseholdScopeGuard** | `guards/household-scope.guard.ts` | Resolves active household (`X-Household-Id` or JWT `activeHouseholdId` hint), then verifies **live** `household_members` membership. JWT `householdIds` is never the access-control source of truth (FR-AUTH-007 / FR-AUTH-006). |
 | **@CurrentHousehold()** | `decorators/current-household.decorator.ts` | Controller param decorator — inject the resolved household id. Preferred over reading `req` manually. |
 | **@CurrentUser()** | `decorators/current-user.decorator.ts` | Controller param decorator — inject JWT user claims. |
@@ -17,7 +17,11 @@ scoping, validation, or error shaping inside controllers or services.
 | **ZodValidationPipe** | `pipes/zod-validation.pipe.ts` | Global nestjs-zod pipe. DTOs use `createZodDto(schema)` with schemas from `packages/types` — never redefine Zod schemas in api vs web. |
 | **HttpExceptionFilter** | `filters/http-exception.filter.ts` | Global JSON error shape for HttpException, Zod validation errors, and unexpected failures. |
 
-## Expected JWT claims (until auth module issues real tokens)
+## Expected JWT claims
+
+Product login uses Auth0 RS256 access tokens (`sub` = Auth0 user id). For
+local curl/scripts only, set `ALLOW_DEV_JWT=true` and sign HS256 with
+`JWT_SECRET`.
 
 ```json
 {
@@ -28,7 +32,9 @@ scoping, validation, or error shaping inside controllers or services.
 }
 ```
 
-Signed with HS256 using env `JWT_SECRET`. `activeHouseholdId` / `householdIds` are optional hints for the client. After bootstrap, a token without those claims still works: send `X-Household-Id` and the guard checks `household_members`.
+`activeHouseholdId` / `householdIds` are optional hints for the client. After
+bootstrap, a token without those claims still works: send `X-Household-Id` and
+the guard checks `household_members`.
 
 ## Controller usage
 

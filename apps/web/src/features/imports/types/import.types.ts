@@ -1,6 +1,7 @@
 import type {
   CategoryRemap,
   ColumnMapping,
+  ImportDateFormat,
   ImportField,
 } from "@expense-tracker/types";
 
@@ -10,6 +11,8 @@ export interface UploadImportResult {
   headers: string[];
   rowCount: number;
   suggestedMapping: ColumnMapping;
+  suggestedDateFormat: ImportDateFormat | null;
+  dateSamples: string[];
   status: string;
 }
 
@@ -44,4 +47,4 @@ export interface CommitImportResult {
   transactionIds: string[];
 }
 
-export type { CategoryRemap, ColumnMapping, ImportField };
+export type { CategoryRemap, ColumnMapping, ImportDateFormat, ImportField };

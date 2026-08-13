@@ -17,6 +17,7 @@ import {
   rowsToRecords,
   suggestColumnMapping,
 } from "./import-csv.parser";
+import { collectDateSamples, suggestDateFormat } from "./import-date";
 import { buildImportPreview } from "./import-preview.builder";
 import { ImportsRepository } from "./imports.repository";
 import type {
@@ -57,6 +58,8 @@ export class ImportsService {
 
     const records = rowsToRecords(headers, rows);
     const suggested = suggestColumnMapping(headers) as ColumnMapping;
+    const dateSamples = collectDateSamples(records, suggested);
+    const suggestedDateFormat = suggestDateFormat(dateSamples);
 
     const batch = await this.repo.create({
       householdId,
@@ -73,18 +76,26 @@ export class ImportsService {
       headers: batch.headers,
       rowCount: batch.rows.length,
       suggestedMapping: batch.suggestedMapping,
+      suggestedDateFormat,
+      dateSamples,
       status: batch.status,
     };
   }
 
   async get(householdId: string, id: string) {
     const batch = await this.requireBatch(householdId, id);
+    const dateSamples = collectDateSamples(
+      batch.rows,
+      batch.suggestedMapping
+    );
     return {
       id: batch.id,
       filename: batch.filename,
       headers: batch.headers,
       rowCount: batch.rows.length,
       suggestedMapping: batch.suggestedMapping,
+      suggestedDateFormat: suggestDateFormat(dateSamples),
+      dateSamples,
       mapping: batch.mapping,
       categoryRemaps: batch.categoryRemaps ?? [],
       previewSummary: batch.previewSummary,
@@ -126,7 +137,8 @@ export class ImportsService {
           type: c.type,
           isActive: c.isActive,
         })),
-        input.categoryRemaps ?? []
+        input.categoryRemaps ?? [],
+        input.dateFormat
       );
     } catch (err) {
       throw new BadRequestException(
@@ -201,7 +213,8 @@ export class ImportsService {
           type: c.type,
           isActive: c.isActive,
         })),
-        input.categoryRemaps ?? []
+        input.categoryRemaps ?? [],
+        input.dateFormat
       );
     } catch (err) {
       throw new BadRequestException(

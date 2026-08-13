@@ -1,25 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@expense-tracker/ui/button";
-import { Input } from "@expense-tracker/ui/input";
-import { Label } from "@expense-tracker/ui/label";
+import { useUser } from "@auth0/nextjs-auth0/client";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useHouseholdStore } from "@/stores/use-household-store";
+import { Auth0LoginButton } from "./Auth0LoginButton";
 
-/** Session gate using same JWT + household as web (Phase 0 contract). */
+/** Session gate: Auth0 only (same tenant as web). */
 export function CaptureSessionGate({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const token = useAuthStore((s) => s.accessToken);
-  const setToken = useAuthStore((s) => s.setAccessToken);
   const householdId = useHouseholdStore((s) => s.activeHouseholdId);
-  const setHousehold = useHouseholdStore((s) => s.setActiveHouseholdId);
+  const { user: auth0User, isLoading: auth0Loading } = useUser();
 
-  const [localToken, setLocalToken] = useState(token ?? "");
-  const [localHh, setLocalHh] = useState(householdId ?? "");
+  if (auth0Loading || (auth0User && !(token && householdId))) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-sm text-[var(--text-secondary)]">
+        Signing in…
+      </div>
+    );
+  }
 
   if (token && householdId) {
     return <>{children}</>;
@@ -31,36 +33,9 @@ export function CaptureSessionGate({
         Capture sign-in
       </h1>
       <p className="text-sm text-[var(--text-secondary)]">
-        Paste the same JWT and household id used in the web app (header{" "}
-        <code className="text-xs">X-Household-Id</code>).
+        Continue with Auth0 to add transactions for your household.
       </p>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="token">Access token</Label>
-        <Input
-          id="token"
-          value={localToken}
-          onChange={(e) => setLocalToken(e.target.value)}
-          placeholder="JWT…"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="hh">Household id</Label>
-        <Input
-          id="hh"
-          value={localHh}
-          onChange={(e) => setLocalHh(e.target.value)}
-          placeholder="UUID…"
-        />
-      </div>
-      <Button
-        onClick={() => {
-          setToken(localToken.trim());
-          setHousehold(localHh.trim());
-        }}
-        disabled={!localToken.trim() || !localHh.trim()}
-      >
-        Continue
-      </Button>
+      <Auth0LoginButton />
     </div>
   );
 }

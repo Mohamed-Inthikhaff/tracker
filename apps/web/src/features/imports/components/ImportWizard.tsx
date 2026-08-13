@@ -12,13 +12,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@expense-tracker/ui/card";
-import type { CategoryRemap, ColumnMapping, ImportField } from "@expense-tracker/types";
+import type {
+  CategoryRemap,
+  ColumnMapping,
+  ImportDateFormat,
+  ImportField,
+} from "@expense-tracker/types";
 import {
   useCommitImport,
   usePreviewImport,
   useUploadImport,
 } from "../hooks/useImports";
 import type { PreviewImportResult, UploadImportResult } from "../types/import.types";
+import { ImportDateFormatSelect } from "./ImportDateFormatSelect";
 
 const FIELDS: ImportField[] = [
   "date",
@@ -40,6 +46,7 @@ export function ImportWizard() {
   const [step, setStep] = useState<Step>("upload");
   const [batch, setBatch] = useState<UploadImportResult | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping>({});
+  const [dateFormat, setDateFormat] = useState<ImportDateFormat | "">("");
   const [remaps, setRemaps] = useState<CategoryRemap[]>([]);
   const [preview, setPreview] = useState<PreviewImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +69,7 @@ export function ImportWizard() {
       });
       setBatch(result);
       setMapping(result.suggestedMapping);
+      setDateFormat(result.suggestedDateFormat ?? "");
       setStep("map");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -69,10 +77,15 @@ export function ImportWizard() {
   }
 
   async function onPreview() {
+    if (!dateFormat) {
+      setError("Confirm the date format before preview");
+      return;
+    }
     setError(null);
     try {
       const result = await runPreview.mutateAsync({
         mapping,
+        dateFormat,
         categoryRemaps: remaps,
       });
       setPreview(result);
@@ -83,10 +96,15 @@ export function ImportWizard() {
   }
 
   async function onCommit() {
+    if (!dateFormat) {
+      setError("Confirm the date format before commit");
+      return;
+    }
     setError(null);
     try {
       const result = await commit.mutateAsync({
         mapping,
+        dateFormat,
         categoryRemaps: remaps,
       });
       setCreatedCount(result.createdCount);
@@ -137,9 +155,9 @@ export function ImportWizard() {
               </span>
             </p>
             <div className="grid gap-3">
-              {batch.headers.map((header) => (
+              {batch.headers.map((header, index) => (
                 <div
-                  key={header}
+                  key={`${index}:${header}`}
                   className="grid items-center gap-2 sm:grid-cols-[1fr_12rem]"
                 >
                   <span className="text-sm truncate">{header || "(empty)"}</span>
@@ -161,7 +179,17 @@ export function ImportWizard() {
                 </div>
               ))}
             </div>
-            <Button onClick={onPreview} loading={runPreview.isPending}>
+            <ImportDateFormatSelect
+              value={dateFormat}
+              onChange={setDateFormat}
+              samples={batch.dateSamples}
+              suggested={batch.suggestedDateFormat}
+            />
+            <Button
+              onClick={onPreview}
+              loading={runPreview.isPending}
+              disabled={!dateFormat}
+            >
               Preview import
             </Button>
           </div>
@@ -316,6 +344,7 @@ export function ImportWizard() {
                 setBatch(null);
                 setPreview(null);
                 setRemaps([]);
+                setDateFormat("");
               }}
             >
               Import another file
