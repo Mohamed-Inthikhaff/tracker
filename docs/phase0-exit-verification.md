@@ -105,9 +105,11 @@ Repeat for several months via the UI summary selector or multiple `?month=` call
 
 ## 5. Sign-off checklist
 
-- [ ] 336+ csv_import transactions present (337 minus blank date)
-- [ ] `GET /transactions/summary?month=2026-08` matches Dashboard cards
-- [ ] At least three other months match Monthly Trend table
-- [ ] No float noise (compare as fixed 2-decimal strings)
+Signed off **2026-08-13** against `Expense_Tracker_Automation Last.xlsx` via `GET /transactions/summary?month=YYYY-MM` (dedicated import household; 336 `csv_import` rows + 1 expected blank-date fail).
+
+- [x] 336+ csv_import transactions present (337 minus blank date)
+- [x] `GET /transactions/summary?month=2026-08` matches Dashboard cards
+- [x] At least three other months match Monthly Trend table (**all 8 months** Income/Expense match)
+- [x] No float noise (compare as fixed 2-decimal strings)
 
 When this passes, Phase 0 exit criterion is met → start Phase 1 (classification, debts, budgets, billing).

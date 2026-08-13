@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { TypeOrmModule } from "@nestjs/typeorm";
+import { TypeOrmModule, type TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from "@nestjs/core";
 import { AuthGuard } from "./common/guards/auth.guard";
 import { HouseholdScopeGuard } from "./common/guards/household-scope.guard";
@@ -38,31 +38,35 @@ import { StripeWebhookEvent } from "./modules/billing/entities/stripe-webhook-ev
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: "postgres" as const,
-        host: config.get<string>("database.host"),
-        port: config.get<number>("database.port"),
-        username: config.get<string>("database.username"),
-        password: config.get<string>("database.password"),
-        database: config.get<string>("database.name"),
-        entities: [
-          Household,
-          HouseholdMember,
-          HouseholdInvite,
-          User,
-          Category,
-          Transaction,
-          ImportBatch,
-          ClassificationExample,
-          Debt,
-          Budget,
-          Subscription,
-          StripeWebhookEvent,
-        ],
-        migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
-        synchronize: config.get<boolean>("database.synchronize") ?? false,
-        logging: config.get<boolean>("database.logging") ?? false,
-      }),
+      useFactory: (config: ConfigService): TypeOrmModuleOptions => {
+        const ssl = config.get<{ rejectUnauthorized: false }>("database.ssl");
+        return {
+          type: "postgres",
+          host: config.get<string>("database.host"),
+          port: config.get<number>("database.port"),
+          username: config.get<string>("database.username"),
+          password: config.get<string>("database.password"),
+          database: config.get<string>("database.name"),
+          ...(ssl ? { ssl } : {}),
+          entities: [
+            Household,
+            HouseholdMember,
+            HouseholdInvite,
+            User,
+            Category,
+            Transaction,
+            ImportBatch,
+            ClassificationExample,
+            Debt,
+            Budget,
+            Subscription,
+            StripeWebhookEvent,
+          ],
+          migrations: [__dirname + "/database/migrations/*{.ts,.js}"],
+          synchronize: config.get<boolean>("database.synchronize") ?? false,
+          logging: config.get<boolean>("database.logging") ?? false,
+        };
+      },
     }),
     HouseholdsModule,
     CategoriesModule,
