@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { getAccessToken, useUser } from "@auth0/nextjs-auth0/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useHouseholdStore } from "@/stores/use-household-store";
 import { useBootstrap } from "./useAuth";
@@ -11,14 +12,11 @@ export function useAuth0Session() {
   const setAccessToken = useAuthStore((s) => s.setAccessToken);
   const householdId = useHouseholdStore((s) => s.activeHouseholdId);
   const bootstrap = useBootstrap();
+  const queryClient = useQueryClient();
   const startedForSub = useRef<string | null>(null);
 
   useEffect(() => {
     if (isLoading || !user?.sub) return;
-
-    const existingToken = useAuthStore.getState().accessToken;
-    if (existingToken && householdId) return;
-
     if (startedForSub.current === user.sub) return;
     startedForSub.current = user.sub;
 
@@ -40,16 +38,19 @@ export function useAuth0Session() {
           return;
         }
         setAccessToken(token);
-        await bootstrap.mutateAsync({
-          email,
-          displayName,
-          householdName: "My Household",
-        });
+        if (!useHouseholdStore.getState().activeHouseholdId) {
+          await bootstrap.mutateAsync({
+            email,
+            displayName,
+            householdName: "My Household",
+          });
+        }
+        await queryClient.invalidateQueries();
       } catch {
         startedForSub.current = null;
       }
     })();
-  }, [isLoading, user, householdId, setAccessToken, bootstrap]);
+  }, [isLoading, user, householdId, setAccessToken, bootstrap, queryClient]);
 
   return { user, isLoading };
 }

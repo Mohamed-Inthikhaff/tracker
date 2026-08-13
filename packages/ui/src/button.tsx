@@ -22,6 +22,8 @@ const buttonVariants = cva(
         default: "h-10 px-4 py-2",
         sm: "h-8 px-3 text-xs",
         lg: "h-11 px-6",
+        /** Thumb-first — NFR 44px minimum tap target (Capture). */
+        touch: "min-h-11 px-5 text-base",
       },
     },
     defaultVariants: {

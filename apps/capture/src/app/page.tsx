@@ -19,7 +19,7 @@ export default function CaptureHomePage() {
           </span>
           <Button
             variant="ghost"
-            size="sm"
+            size="touch"
             onClick={() => {
               clearAuth(null);
               clearHh(null);

@@ -12,6 +12,7 @@ export function Auth0LoginButton({
   return (
     <Button
       type="button"
+      size="touch"
       className="w-full"
       onClick={() => {
         window.location.assign(

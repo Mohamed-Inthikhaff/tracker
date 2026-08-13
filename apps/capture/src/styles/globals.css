@@ -1,9 +1,21 @@
 @import "tailwindcss";
 @import "@expense-tracker/ui/theme/tokens.css";
+@source "../../../../packages/ui/src";
 
 @theme {
   --font-sans: var(--font-body);
-  --font-serif: var(--font-display);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-surface-base: var(--surface-base);
+  --color-surface-card: var(--surface-card);
+  --color-border-default: var(--border-default);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-type-income: var(--type-income);
+  --color-type-expense: var(--type-expense);
+  --color-type-saving: var(--type-saving);
+  --color-type-debt-given: var(--type-debt-given);
+  --color-type-debt-received: var(--type-debt-received);
 }
 
 html,

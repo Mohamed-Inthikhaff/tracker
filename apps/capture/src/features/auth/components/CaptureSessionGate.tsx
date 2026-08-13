@@ -18,7 +18,7 @@ export function CaptureSessionGate({
   if (auth0Loading || (auth0User && !(token && householdId))) {
     return (
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 text-sm text-[var(--text-secondary)]">
-        Signing in…
+        Signing in to your household…
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function CaptureSessionGate({
         Capture sign-in
       </h1>
       <p className="text-sm text-[var(--text-secondary)]">
-        Continue with Auth0 to add transactions for your household.
+        Continue with Auth0, then enter an amount and tap a category to save.
       </p>
       <Auth0LoginButton />
     </div>
