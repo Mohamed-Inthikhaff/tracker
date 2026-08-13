@@ -21,7 +21,7 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        "rounded-md border border-[var(--border-default)] bg-[var(--surface-base)] p-3",
+        "rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] p-3",
         className
       )}
       {...props}

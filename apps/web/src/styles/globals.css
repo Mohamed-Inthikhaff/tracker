@@ -2,7 +2,8 @@
 @import "@expense-tracker/ui/theme/tokens.css";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
   --color-brand-primary: var(--brand-primary);
   --color-brand-accent: var(--brand-accent);
   --color-surface-base: var(--surface-base);
@@ -24,7 +25,7 @@ body {
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   background: var(--surface-base);
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;

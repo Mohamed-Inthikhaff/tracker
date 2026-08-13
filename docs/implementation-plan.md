@@ -65,15 +65,17 @@ Semantic color coding matters more in a finance app than almost any other produc
 
 ### 4.1 Core palette (CSS variables, light / dark)
 
+Navy (`#1F3A5F`) and teal (`#0F6E56`) were **retired**. The shell is warm paper + sage so the app reads as a household ledger, not generic enterprise SaaS. Brand sage is **not** green: `--type-income` `#1D9E75` is the **only** green in the palette, so income never collides with chrome.
+
 | Token | Light | Dark | Usage |
 |---|---|---|---|
-| `--brand-primary` | `#1F3A5F` (deep navy) | `#7FA5D1` | Primary actions, nav, headers |
-| `--brand-accent` | `#0F6E56` (teal) | `#4ED9B5` | Secondary actions, links, active states |
-| `--surface-base` | `#FFFFFF` | `#111318` | Page background |
-| `--surface-card` | `#F7F8FA` | `#1B1E24` | Card backgrounds |
-| `--border-default` | `#E2E5EA` | `#2A2E36` | Dividers, card borders |
-| `--text-primary` | `#111318` | `#F1F2F4` | Body text |
-| `--text-secondary` | `#5F6672` | `#9CA3AF` | Labels, captions |
+| `--surface-base` | `#FAF9F6` (paper) | `#1A1916` | Page background |
+| `--surface-card` | `#F3F1EB` | `#23211C` | Card backgrounds |
+| `--text-primary` | `#1C1B19` (ink) | `#F1EDE6` | Body text |
+| `--text-secondary` | `#6B6558` | `#A79E8E` | Labels, captions |
+| `--border-default` | `#E4E0D6` | `#33302A` | Dividers, card borders |
+| `--brand-primary` | `#4A5D53` (sage) | `#9DB3A4` | Nav, primary buttons, section chrome |
+| `--brand-accent` | `#8A9C90` (lighter sage) | `#6F8378` | Secondary actions only |
 
 ### 4.2 Semantic transaction-type colors (the important part)
 
@@ -99,13 +101,14 @@ Per NFR-USAB-003 (SRS Section 5.3), every color-coded state also carries a non-c
 
 ### 4.4 Typography
 
-- **Font:** Inter (variable font, excellent number-tabular support — important for a finance app where columns of amounts must align).
-- **Numeric figures use `font-variant-numeric: tabular-nums`** everywhere amounts are displayed in a list or table, so digits align vertically.
+- **`--font-display`:** Source Serif 4 (system serif fallback) — **section titles and page headers only** (“Dashboard”, “Debt ledger”).
+- **`--font-body`:** Inter (system sans fallback) — everything else, including **every number**.
+- **Hard rule:** numeric figures use `font-variant-numeric: tabular-nums`. Never serif on money.
 - Scale: `text-xs` (12px) captions → `text-sm` (14px) body → `text-lg` (18px) card titles → `text-2xl`/`text-3xl` (24/30px) KPI figures.
 
 ### 4.5 Where this lives in code
 
-All tokens above live in one file, `packages/ui/src/theme/tokens.css`, as CSS variables, consumed by Tailwind via `tailwind.config.ts`'s `theme.extend.colors` mapping to `var(--token-name)`. This is the single source of truth — no component ever hardcodes a hex value.
+All color and font tokens live in one file, `packages/ui/src/theme/tokens.css`, as CSS variables, consumed by Tailwind via `@theme` mappings to `var(--token-name)`. This is the single source of truth — no component ever hardcodes a hex value.
 
 ---
 

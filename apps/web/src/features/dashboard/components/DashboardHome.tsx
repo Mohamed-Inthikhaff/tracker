@@ -16,6 +16,7 @@ import {
   useDashboardSummary,
   useIncomeExpenseTrend,
 } from "../hooks/useDashboard";
+import { IncomeExpenseTrendChart } from "./IncomeExpenseTrendChart";
 
 export function DashboardHome() {
   const [month, setMonth] = useState(currentMonthKey());
@@ -24,13 +25,6 @@ export function DashboardHome() {
   const breakdown = useCategoryBreakdown(month);
   const trend = useIncomeExpenseTrend(12);
 
-  const maxTrend = Math.max(
-    1,
-    ...(trend.data ?? []).flatMap((p) => [
-      Number(p.income) || 0,
-      Number(p.expense) || 0,
-    ])
-  );
   const maxCat = Math.max(
     1,
     ...(breakdown.data ?? []).map((r) => Number(r.amount) || 0)
@@ -40,7 +34,7 @@ export function DashboardHome() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+          <h1 className="font-serif text-xl font-semibold text-[var(--text-primary)]">
             Dashboard
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
@@ -97,7 +91,7 @@ export function DashboardHome() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Category expense breakdown</CardTitle>
+            <CardTitle className="font-serif">Category expense breakdown</CardTitle>
             <CardDescription>Sorted by amount for {month}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -116,7 +110,7 @@ export function DashboardHome() {
                       {formatMoney(row.amount)}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-card)]">
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-base)]">
                     <div
                       className="h-full rounded-full bg-[var(--type-expense)]"
                       style={{
@@ -135,46 +129,24 @@ export function DashboardHome() {
 
         <Card>
           <CardHeader>
-            <CardTitle>12-month trend</CardTitle>
+            <CardTitle className="font-serif">12-month trend</CardTitle>
             <CardDescription>Income vs expense</CardDescription>
           </CardHeader>
           <CardContent>
             {trend.isLoading ? (
               <p className="text-sm text-[var(--text-secondary)]">Loading…</p>
+            ) : trend.isError ? (
+              <p className="text-sm text-[var(--budget-over)]">
+                {(trend.error as Error).message}
+              </p>
+            ) : (trend.data?.length ?? 0) === 0 ? (
+              <p className="text-sm text-[var(--text-secondary)]">
+                No monthly totals yet. Import or add transactions to see income
+                vs expense over time.
+              </p>
             ) : (
-              <div className="flex h-48 items-end gap-1">
-                {(trend.data ?? []).map((p) => {
-                  const incH = (Number(p.income) / maxTrend) * 100;
-                  const expH = (Number(p.expense) / maxTrend) * 100;
-                  return (
-                    <div
-                      key={p.month}
-                      className="flex flex-1 flex-col items-center justify-end gap-0.5"
-                      title={`${p.month}: I ${p.income} / E ${p.expense}`}
-                    >
-                      <div className="flex w-full items-end justify-center gap-0.5">
-                        <div
-                          className="w-1/2 max-w-[0.6rem] rounded-t bg-[var(--type-income)]"
-                          style={{ height: `${Math.max(incH, 2)}%` }}
-                        />
-                        <div
-                          className="w-1/2 max-w-[0.6rem] rounded-t bg-[var(--type-expense)]"
-                          style={{ height: `${Math.max(expH, 2)}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] text-[var(--text-secondary)]">
-                        {p.month.slice(5)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              <IncomeExpenseTrendChart points={trend.data ?? []} />
             )}
-            <p className="mt-3 text-xs text-[var(--text-secondary)]">
-              <span className="text-[var(--type-income)]">■ Income</span>
-              {" · "}
-              <span className="text-[var(--type-expense)]">■ Expense</span>
-            </p>
           </CardContent>
         </Card>
       </div>
