@@ -8,7 +8,7 @@ scoping, validation, or error shaping inside controllers or services.
 | Piece | File | Role |
 |-------|------|------|
 | **AuthGuard** | `guards/auth.guard.ts` | Reads `Authorization: Bearer <jwt>`, verifies the token with `JWT_SECRET`, and attaches `request.user` (`userId`, `activeHouseholdId`, `householdIds`). |
-| **HouseholdScopeGuard** | `guards/household-scope.guard.ts` | Resolves the active household for the request (header `X-Household-Id` or JWT `activeHouseholdId`), checks membership, sets `request.householdId`. This is how FR-AUTH-007 (no cross-household leakage) is enforced structurally. |
+| **HouseholdScopeGuard** | `guards/household-scope.guard.ts` | Resolves active household (`X-Household-Id` or JWT `activeHouseholdId` hint), then verifies **live** `household_members` membership. JWT `householdIds` is never the access-control source of truth (FR-AUTH-007 / FR-AUTH-006). |
 | **@CurrentHousehold()** | `decorators/current-household.decorator.ts` | Controller param decorator — inject the resolved household id. Preferred over reading `req` manually. |
 | **@CurrentUser()** | `decorators/current-user.decorator.ts` | Controller param decorator — inject JWT user claims. |
 | **@Public()** | `decorators/public.decorator.ts` | Skip both guards (health checks). |
@@ -21,14 +21,14 @@ scoping, validation, or error shaping inside controllers or services.
 
 ```json
 {
-  "sub": "<userId>",
+  "sub": "<auth0Sub>",
   "email": "optional@example.com",
   "activeHouseholdId": "<uuid>",
   "householdIds": ["<uuid>", "..."]
 }
 ```
 
-Signed with HS256 using env `JWT_SECRET`.
+Signed with HS256 using env `JWT_SECRET`. `activeHouseholdId` / `householdIds` are optional hints for the client. After bootstrap, a token without those claims still works: send `X-Household-Id` and the guard checks `household_members`.
 
 ## Controller usage
 

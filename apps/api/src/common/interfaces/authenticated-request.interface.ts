@@ -8,11 +8,14 @@ export interface JwtUserClaims {
   userId: string;
   email?: string;
   /**
-   * Claim from token: last-known / default active household.
-   * Empty for first-time users before FR-AUTH-002 bootstrap.
+   * JWT hint: last-known / default active household (frontend convenience).
+   * Not used as the access-control source of truth (FR-AUTH-007).
    */
   activeHouseholdId?: string;
-  /** All households the user may access (membership set). */
+  /**
+   * JWT hint: households the client thinks the user belongs to.
+   * Membership is verified per-request against `household_members`.
+   */
   householdIds: string[];
 }
 

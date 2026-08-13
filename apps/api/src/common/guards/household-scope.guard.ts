@@ -9,17 +9,22 @@ import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { SKIP_HOUSEHOLD_SCOPE_KEY } from "../decorators/skip-household-scope.decorator";
 import type { AuthenticatedRequest } from "../interfaces/authenticated-request.interface";
+import { HouseholdsRepository } from "../../modules/households/households.repository";
 
 /**
  * Resolves the request's active household (FR-AUTH-007).
- * Prefer `X-Household-Id` when the user is switching households; otherwise
- * fall back to the JWT `activeHouseholdId` claim. Membership is always checked.
+ * Prefer `X-Household-Id` when switching; otherwise fall back to JWT
+ * `activeHouseholdId` as a convenience hint only. Membership is always
+ * verified against `household_members` (not JWT `householdIds`).
  */
 @Injectable()
 export class HouseholdScopeGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly households: HouseholdsRepository
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -51,7 +56,18 @@ export class HouseholdScopeGuard implements CanActivate {
       throw new ForbiddenException("No active household on request");
     }
 
-    if (!user.householdIds.includes(requested)) {
+    const dbUser = await this.households.findUserByAuth0Sub(user.userId);
+    if (!dbUser) {
+      throw new ForbiddenException(
+        "User is not a member of the requested household"
+      );
+    }
+
+    const membership = await this.households.findActiveMembership(
+      requested,
+      dbUser.id
+    );
+    if (!membership) {
       throw new ForbiddenException(
         "User is not a member of the requested household"
       );

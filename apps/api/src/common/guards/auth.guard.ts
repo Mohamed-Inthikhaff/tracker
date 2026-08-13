@@ -23,6 +23,9 @@ interface AccessTokenPayload {
  * Verifies Bearer JWT and attaches `request.user`.
  * Real identity provider (Auth0) wiring lands in the auth module;
  * this guard only enforces the token contract every route relies on.
+ *
+ * JWT `householdIds` / `activeHouseholdId` are frontend convenience hints.
+ * Access control is HouseholdScopeGuard + `household_members` (FR-AUTH-007).
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -77,12 +80,6 @@ function toClaims(payload: AccessTokenPayload): JwtUserClaims {
     ? payload.householdIds
     : [];
   const activeHouseholdId = payload.activeHouseholdId?.trim() || undefined;
-
-  if (activeHouseholdId && !householdIds.includes(activeHouseholdId)) {
-    throw new UnauthorizedException(
-      "Token household claims are invalid or incomplete"
-    );
-  }
 
   return {
     userId: payload.sub,
