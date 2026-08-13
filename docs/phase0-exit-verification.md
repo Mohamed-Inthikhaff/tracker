@@ -122,3 +122,5 @@ When this passes, Phase 0 exit criterion is met → start Phase 1 (classificatio
 [`fixtures/phase0-dashboard-expected.json`](./fixtures/phase0-dashboard-expected.json) is a **frozen snapshot** from the first Phase 0 sign-off (336 dated rows). The live Google Sheet has kept moving since (e.g. `2026-08-13` Expense Food & Snacks “Chicken + Egg” Rs 1,200). August in the running app can therefore show a small, known delta versus the fixture without meaning the importer is wrong.
 
 Do **not** keep re-syncing the fixture to the live sheet. Trust the app going forward; the fixture already proved parser + aggregation once.
+
+The Transactions **Monthly totals** panel is a product KPI, not a live Phase 0 checker. It must not compare running-household August to this frozen snapshot (that comparison false-alarms on every new live-sheet row, e.g. Chicken + Egg Rs 1,200). Re-run the check against `Phase0 Exit Household` (`521b7ba2-…`) or a fresh import of the original CSV if you need to re-verify parser + aggregation.

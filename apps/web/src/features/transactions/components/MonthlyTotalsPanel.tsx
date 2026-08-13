@@ -24,13 +24,6 @@ const MONTHS = [
   "2026-08",
 ];
 
-/** Expected Dashboard values for the acceptance spreadsheet (Aug 2026 cards). */
-const DASHBOARD_AUG = {
-  Income: "72452.00",
-  Expense: "45481.00",
-  netBalance: "26971.00",
-};
-
 export function MonthlyTotalsPanel() {
   const householdId = useHouseholdStore((s) => s.activeHouseholdId);
   const [month, setMonth] = useState("2026-08");
@@ -41,21 +34,13 @@ export function MonthlyTotalsPanel() {
     enabled: Boolean(householdId),
   });
 
-  const matchesAug =
-    month === "2026-08" &&
-    data &&
-    data.byType.Income === DASHBOARD_AUG.Income &&
-    data.byType.Expense === DASHBOARD_AUG.Expense &&
-    data.netBalance === DASHBOARD_AUG.netBalance;
-
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div>
           <CardTitle className="text-base font-semibold">Monthly totals</CardTitle>
           <CardDescription>
-            Phase 0 exit check vs spreadsheet Dashboard (Income / Expense /
-            Net).
+            Income, expense, saving, and net for the selected month.
           </CardDescription>
         </div>
         <Select
@@ -104,24 +89,6 @@ export function MonthlyTotalsPanel() {
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
               {data.count} transactions · {data.dateFrom} → {data.dateTo}
-              {month === "2026-08" ? (
-                <>
-                  {" "}
-                  · Dashboard target I {DASHBOARD_AUG.Income} / E{" "}
-                  {DASHBOARD_AUG.Expense} / Net {DASHBOARD_AUG.netBalance}
-                  {matchesAug ? (
-                    <span className="text-[var(--type-income)]">
-                      {" "}
-                      · match ✓
-                    </span>
-                  ) : (
-                    <span className="text-[var(--type-expense)]">
-                      {" "}
-                      · mismatch — see docs/phase0-exit-verification.md
-                    </span>
-                  )}
-                </>
-              ) : null}
             </p>
           </div>
         ) : null}
