@@ -99,14 +99,27 @@ This is the encoding that should be **identical everywhere in the app** — dash
 
 Per NFR-USAB-003 (SRS Section 5.3), every color-coded state also carries a non-color cue: an icon (check / warning-triangle / alert-circle from Lucide) alongside the color, never color alone.
 
-### 4.4 Typography
+### 4.4 Debt-status indicator (not the budget traffic light)
+
+A different state set from §4.3. Do **not** reuse Under/Near/Over colors or icons. Same shared `Badge` in `packages/ui`; debts pass `tone` + `icon`. No `TxnTypeRail` on the debt ledger.
+
+| Status | Color token | Icon (Lucide) | Notes |
+|---|---|---|---|
+| Outstanding + I Owe | `--type-debt-received` (amber) | `Circle` | Same hue as “Owed by household” KPI |
+| Outstanding + Owed to me | `--type-debt-given` (purple) | `Circle` | Same hue as “Owed to household” KPI |
+| Partially paid | `--brand-primary` on `--brand-accent` wash | `CircleDot` | Sage in-progress — **not** budget Near amber, **not** Outstanding amber |
+| Settled | `--type-income` (green) | `Check` | Resolved / good outcome, same green as income |
+
+Stage is color-independent via circle → dotted → check (NFR-USAB-003). Outstanding uses two hues on purpose: I-owe vs owed-to-me are different mental categories; the shared `Circle` icon still means “open.” When real partial-payment rows exist, check sage-on-accent-wash doesn’t read as a nav/button chrome (`--brand-primary`).
+
+### 4.5 Typography
 
 - **`--font-display`:** Source Serif 4 (system serif fallback) — **section titles and page headers only** (“Dashboard”, “Debt ledger”).
 - **`--font-body`:** Inter (system sans fallback) — everything else, including **every number**.
 - **Hard rule:** numeric figures use `font-variant-numeric: tabular-nums`. Never serif on money.
 - Scale: `text-xs` (12px) captions → `text-sm` (14px) body → `text-lg` (18px) card titles → `text-2xl`/`text-3xl` (24/30px) KPI figures.
 
-### 4.5 Where this lives in code
+### 4.6 Where this lives in code
 
 All color and font tokens live in one file, `packages/ui/src/theme/tokens.css`, as CSS variables, consumed by Tailwind via `@theme` mappings to `var(--token-name)`. This is the single source of truth — no component ever hardcodes a hex value.
 

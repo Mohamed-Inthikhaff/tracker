@@ -1,5 +1,10 @@
 import * as React from "react";
-import { Check, CircleAlert, TriangleAlert } from "lucide-react";
+import {
+  Check,
+  CircleAlert,
+  TriangleAlert,
+  type LucideIcon,
+} from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./lib/cn";
 
@@ -20,6 +25,9 @@ const badgeVariants = cva(
         under: "bg-budget-under/15 text-budget-under",
         near: "bg-budget-near/15 text-budget-near",
         over: "bg-budget-over/15 text-budget-over",
+        /** Debt Partially paid (impl-plan §4.4) — not budget Near amber. */
+        partial:
+          "bg-[var(--brand-accent)]/20 text-[var(--brand-primary)]",
       },
     },
     defaultVariants: { tone: "default" },
@@ -56,22 +64,35 @@ const HEALTH_STYLE: Record<
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  /** Extra NFR-USAB-003 cue. Budget health tones already pick an icon. */
+  icon?: LucideIcon;
+}
 
 export function Badge({
   className,
   tone,
+  icon: IconProp,
   children,
   style,
   ...props
 }: BadgeProps) {
-  const Icon =
+  const HealthIcon =
     tone && tone in HEALTH_ICON
       ? HEALTH_ICON[tone as keyof typeof HEALTH_ICON]
       : null;
+  const Icon = IconProp ?? HealthIcon;
   const healthStyle =
     tone && tone in HEALTH_STYLE
       ? HEALTH_STYLE[tone as keyof typeof HEALTH_STYLE]
+      : undefined;
+  const partialStyle =
+    tone === "partial"
+      ? {
+          color: "var(--brand-primary)",
+          backgroundColor:
+            "color-mix(in srgb, var(--brand-accent) 22%, transparent)",
+        }
       : undefined;
 
   return (
@@ -87,6 +108,7 @@ export function Badge({
             }
           : null),
         ...healthStyle,
+        ...partialStyle,
         ...style,
       }}
       {...props}
