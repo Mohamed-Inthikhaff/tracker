@@ -21,8 +21,8 @@ export function IncomeExpenseTrendChart({ points }: { points: TrendPoint[] }) {
         </div>
         <div className="relative flex h-full gap-1">
           {points.map((p) => {
-            const incH = (Number(p.income) / maxTrend) * 100;
-            const expH = (Number(p.expense) / maxTrend) * 100;
+            const incH = (Number(p.income) / maxTrend) * 92;
+            const expH = (Number(p.expense) / maxTrend) * 92;
             return (
               <div
                 key={p.month}

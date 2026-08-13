@@ -52,7 +52,7 @@ export function MonthlyTotalsPanel() {
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div>
-          <CardTitle>Monthly totals</CardTitle>
+          <CardTitle className="text-base font-semibold">Monthly totals</CardTitle>
           <CardDescription>
             Phase 0 exit check vs spreadsheet Dashboard (Income / Expense /
             Net).
@@ -140,7 +140,7 @@ function Kpi({
   tone: string;
 }) {
   return (
-    <div className="rounded-md border border-[var(--border-default)] bg-[var(--surface-base)] p-3">
+    <div className="rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] p-3">
       <p className="text-xs text-[var(--text-secondary)]">{label}</p>
       <p className="mt-1 text-xl font-semibold tabular-nums" style={{ color: tone }}>
         {value}

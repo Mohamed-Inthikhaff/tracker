@@ -24,6 +24,7 @@ import {
   useUploadImport,
 } from "../hooks/useImports";
 import type { PreviewImportResult, UploadImportResult } from "../types/import.types";
+import { TxnTypeRail, txnTypeToken } from "@expense-tracker/ui/txn-type-rail";
 import { ImportDateFormatSelect } from "./ImportDateFormatSelect";
 
 const FIELDS: ImportField[] = [
@@ -266,28 +267,39 @@ export function ImportWizard() {
               </div>
             ) : null}
 
-            <div className="overflow-x-auto rounded-md border border-[var(--border-default)]">
-              <table className="w-full min-w-[32rem] text-left text-sm">
-                <thead className="bg-[var(--surface-base)] text-xs uppercase text-[var(--text-secondary)]">
+            <div className="overflow-x-auto rounded-md border border-[var(--border-default)] bg-[var(--surface-base)]">
+              <table className="w-full min-w-[32rem] border-separate border-spacing-0 text-left text-sm">
+                <thead className="bg-[var(--surface-card)] text-xs uppercase text-[var(--text-secondary)]">
                   <tr>
-                    <th className="px-2 py-2">#</th>
-                    <th className="px-2 py-2">Date</th>
-                    <th className="px-2 py-2">Type</th>
-                    <th className="px-2 py-2">Category</th>
-                    <th className="px-2 py-2 text-right">Amount</th>
+                    <th className="px-2 py-1.5">#</th>
+                    <th className="px-2 py-1.5">Date</th>
+                    <th className="px-2 py-1.5">Type</th>
+                    <th className="px-2 py-1.5">Category</th>
+                    <th className="px-2 py-1.5 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {preview.sampleReady.map((row) => (
                     <tr
                       key={row.rowNumber}
-                      className="border-t border-[var(--border-default)]"
+                      className="border-b border-[var(--border-default)] last:border-b-0"
                     >
-                      <td className="px-2 py-1.5">{row.rowNumber}</td>
-                      <td className="px-2 py-1.5">{row.date}</td>
-                      <td className="px-2 py-1.5">{row.type}</td>
-                      <td className="px-2 py-1.5">{row.categoryName}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">
+                      <TxnTypeRail variant="cell" type={row.type}>
+                        {row.rowNumber}
+                      </TxnTypeRail>
+                      <td className="px-2 py-1.5 text-[var(--text-primary)]">
+                        {row.date}
+                      </td>
+                      <td className="px-2 py-1.5 text-[var(--text-primary)]">
+                        {row.type}
+                      </td>
+                      <td className="px-2 py-1.5 text-[var(--text-secondary)]">
+                        {row.categoryName}
+                      </td>
+                      <td
+                        className="px-2 py-1.5 text-right tabular-nums font-medium"
+                        style={{ color: txnTypeToken(row.type) }}
+                      >
                         {row.amount}
                       </td>
                     </tr>

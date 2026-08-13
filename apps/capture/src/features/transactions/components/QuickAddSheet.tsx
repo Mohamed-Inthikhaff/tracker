@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AmountInput } from "@expense-tracker/ui/amount-input";
 import { Button } from "@expense-tracker/ui/button";
+import { TxnTypeRail, txnTypeToken } from "@expense-tracker/ui/txn-type-rail";
 import {
   useCategories,
   useCreateTransaction,
@@ -134,18 +135,23 @@ export function QuickAddSheet() {
           <p className="mb-2 text-xs uppercase text-[var(--text-secondary)]">
             Just saved
           </p>
-          <ul className="flex flex-col gap-1 text-sm">
-            {(recent.data ?? []).slice(0, 5).map((t) => (
-              <li
-                key={t.id}
-                className="flex justify-between text-[var(--text-secondary)]"
-              >
-                <span className={t.id.startsWith("optimistic") ? "opacity-70" : ""}>
-                  {t.date}
-                </span>
-                <span className="tabular-nums font-medium text-[var(--type-expense)]">
-                  {t.amount}
-                </span>
+          <ul className="flex flex-col text-sm">
+            {(recent.data ?? []).slice(0, 5).map((t, i, list) => (
+              <li key={t.id}>
+                <TxnTypeRail
+                  type={t.type}
+                  className={`flex justify-between gap-2 ${
+                    t.id.startsWith("optimistic") ? "opacity-70" : ""
+                  } ${i === list.length - 1 ? "border-b-0" : ""}`}
+                >
+                  <span className="text-[var(--text-secondary)]">{t.date}</span>
+                  <span
+                    className="font-medium tabular-nums"
+                    style={{ color: txnTypeToken(t.type) }}
+                  >
+                    {t.amount}
+                  </span>
+                </TxnTypeRail>
               </li>
             ))}
           </ul>

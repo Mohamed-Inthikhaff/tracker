@@ -6,4 +6,5 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./car
 export { Select } from "./select";
 export { KpiCard } from "./kpi-card";
 export { AmountInput } from "./amount-input";
+export { TxnTypeRail, txnTypeToken, TXN_TYPE_RAIL_PX } from "./txn-type-rail";
 export { cn } from "./lib/cn";
