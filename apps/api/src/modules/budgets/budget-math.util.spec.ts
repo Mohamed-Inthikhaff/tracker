@@ -15,9 +15,16 @@ describe("budget-math.util", () => {
       });
     });
 
-    it("Near at default 90% threshold", () => {
+    it("Near between 80% inclusive and 100% inclusive", () => {
       expect(computeBudgetLine("100.00", "90.00").health).toBe("Near");
       expect(computeBudgetLine("100.00", "95.00").health).toBe("Near");
+    });
+
+    it("exact Under→Near→Over boundaries (impl-plan §4.3)", () => {
+      expect(computeBudgetLine("100.00", "79.99").health).toBe("Under");
+      expect(computeBudgetLine("100.00", "80.00").health).toBe("Near");
+      expect(computeBudgetLine("100.00", "100.00").health).toBe("Near");
+      expect(computeBudgetLine("100.00", "100.01").health).toBe("Over");
     });
 
     it("Over when actual exceeds budget", () => {
@@ -26,8 +33,6 @@ describe("budget-math.util", () => {
         percentOfBudgetUsed: 100,
         health: "Over",
       });
-      // exact 100% is Near boundary — still not overspent
-      expect(computeBudgetLine("100.00", "100.00").health).toBe("Near");
     });
   });
 

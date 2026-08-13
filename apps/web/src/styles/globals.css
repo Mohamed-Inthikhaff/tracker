@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@expense-tracker/ui/theme/tokens.css";
+@source "../../../../packages/ui/src";
 
 @theme {
   --font-sans: var(--font-body);
@@ -16,6 +17,9 @@
   --color-type-saving: var(--type-saving);
   --color-type-debt-given: var(--type-debt-given);
   --color-type-debt-received: var(--type-debt-received);
+  --color-budget-under: var(--budget-under);
+  --color-budget-near: var(--budget-near);
+  --color-budget-over: var(--budget-over);
 }
 
 html,

@@ -1,7 +1,11 @@
 import type { BudgetHealth } from "@expense-tracker/types";
 
-/** Near threshold = 90% used (under that = Under, above 100% = Over). */
-export const BUDGET_NEAR_PERCENT = 90;
+/**
+ * Under → Near boundary (impl-plan §4.3 / FR-BUD-004 spreadsheet traffic light).
+ * Actual < 80% = Under; 80–100% inclusive = Near; > 100% = Over.
+ * Not FR-NOTIF-001’s example 90% notification threshold — that is a separate FR.
+ */
+export const BUDGET_NEAR_PERCENT = 80;
 
 /**
  * FR-BUD-003 / FR-BUD-004 — variance, percent used, traffic-light health.
